@@ -1,13 +1,12 @@
 # Example Volunteer Profile
-# This file demonstrates how to use the Volunteer Profile Ontology
-# to describe a volunteer's profile stored in a Solid pod
+# Demonstrates usage of the Volunteer Profile Ontology
+# Stored in a Solid pod as an extended profile document
 
 @prefix vp:              <https://id.volunteeringdata.io/volunteer-profile/> .
 @prefix volunteering:    <https://id.volunteeringdata.io/schema/> .
 @prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
-@prefix foaf:            <http://xmlns.com/foaf/0.1/> .
 @prefix :                <#> .
 
 
@@ -17,55 +16,30 @@
 
 :volunteerProfile
     a vp:VolunteerProfile ;
-    vp:profileOwner <https://alice.solidpod.example/profile/card#me> ;
-    vp:profileCreated "2026-01-02T10:30:00Z"^^xsd:dateTime ;
-    vp:profileModified "2026-01-02T14:15:00Z"^^xsd:dateTime ;
-    vp:bio "Passionate about helping my community and making a positive impact. I have experience in event organization and enjoy working with diverse groups of people."@en ;
-    vp:preferredContactMethod "email" ;
     
     # Location preferences
-    vp:hasCurrentLocation :currentLocation ;
-    vp:hasLocationPreference :locationPref1 ;
-    vp:hasLocationPreference :locationPref2 ;
+    vp:preferredLocation :locationLondon ;
+    vp:preferredLocation :locationBirmingham ;
     
-    # Availability
-    vp:hasAvailability :availability ;
+    # Time preferences
+    vp:preferredTime :saturdayMorning ;
+    vp:preferredTime :wednesdayEvening ;
     
-    # Charitable causes of interest
-    vp:hasCauseInterest :causeEnvironment ;
-    vp:hasCauseInterest :causeEducation ;
+    # Skills (from CrisisResponseSkills in crisis.ttl)
+    vp:hasSkill volunteering:ActiveListening ;
+    vp:hasSkill volunteering:CalmnessUnderPressure ;
+    vp:hasSkill volunteering:Driving ;
+    vp:hasSkill volunteering:BasicFirstAidKnowledge ;
     
-    # Skills
-    vp:hasSkill :skillEventPlanning ;
-    vp:hasSkill :skillPublicSpeaking ;
+    # Requirements/Assets (from CrisisResponseRequirement in crisis.ttl)
+    vp:hasRequirement volunteering:PhysicalStamina ;
+    vp:hasRequirement volunteering:SturdyFootwear ;
+    vp:hasRequirement volunteering:HighVisibilityVest ;
+    vp:hasRequirement volunteering:PhoneAndPowerBank ;
     
-    # Languages
-    vp:hasLanguage :languageEnglish ;
-    vp:hasLanguage :languageSpanish ;
-    
-    # Accessibility requirements
-    vp:hasAccessibilityRequirement :accessibilityMobility ;
-    
-    # Preferences
-    vp:hasPreferences :preferences ;
-    
-    # Search preferences
-    vp:hasSearchPreference :searchPrefs ;
-.
-
-
-## ============================================================================
-## Current Location
-## ============================================================================
-
-:currentLocation
-    a vp:CurrentLocation ;
-    vp:address "123 Main Street"@en ;
-    vp:city "London"@en ;
-    vp:postalCode "EC1A 1BB" ;
-    vp:country "United Kingdom"@en ;
-    vp:latitude "51.5074"^^xsd:decimal ;
-    vp:longitude "-0.1278"^^xsd:decimal ;
+    # Preferred charitable causes (from Cause in vocabulary.ttl)
+    vp:preferredCause <https://id.volunteeringdata.io/concept/cause/environment> ;
+    vp:preferredCause <https://id.volunteeringdata.io/concept/cause/community> ;
 .
 
 
@@ -73,140 +47,33 @@
 ## Location Preferences
 ## ============================================================================
 
-:locationPref1
-    a vp:LocationPreference ;
-    vp:locationLabel "Central London"@en ;
-    vp:city "London"@en ;
-    vp:country "United Kingdom"@en ;
-    vp:latitude "51.5074"^^xsd:decimal ;
-    vp:longitude "-0.1278"^^xsd:decimal ;
+:locationLondon
+    a vp:PreferredLocation ;
+    vp:long "-0.1278"^^xsd:decimal ;
+    vp:lat "51.5074"^^xsd:decimal ;
+    vp:rad "15"^^xsd:decimal ;
 .
 
-:locationPref2
-    a vp:LocationPreference ;
-    vp:locationLabel "East London"@en ;
-    vp:city "London"@en ;
-    vp:postalCode "E1" ;
-    vp:country "United Kingdom"@en ;
+:locationBirmingham
+    a vp:PreferredLocation ;
+    vp:long "-1.8904"^^xsd:decimal ;
+    vp:lat "52.4862"^^xsd:decimal ;
+    vp:rad "10"^^xsd:decimal ;
 .
 
 
 ## ============================================================================
-## Availability
+## Time Preferences
 ## ============================================================================
 
-:availability
-    a vp:Availability ;
-    vp:availableFrom "2026-01-15"^^xsd:date ;
-    vp:availableUntil "2026-12-31"^^xsd:date ;
-    vp:hoursPerWeek "10"^^xsd:decimal ;
-    vp:hasTimeSlot :timeSlotSaturdayMorning ;
-    vp:hasTimeSlot :timeSlotWednesdayEvening ;
+:saturdayMorning
+    a vp:PreferredTime ;
+    vp:day vp:Saturday ;
+    vp:time vp:Morning ;
 .
 
-:timeSlotSaturdayMorning
-    a vp:TimeSlot ;
-    vp:dayOfWeek "Saturday" ;
-    vp:startTime "09:00:00"^^xsd:time ;
-    vp:endTime "13:00:00"^^xsd:time ;
-    vp:isRecurring true ;
-.
-
-:timeSlotWednesdayEvening
-    a vp:TimeSlot ;
-    vp:dayOfWeek "Wednesday" ;
-    vp:startTime "18:00:00"^^xsd:time ;
-    vp:endTime "21:00:00"^^xsd:time ;
-    vp:isRecurring true ;
-.
-
-
-## ============================================================================
-## Charitable Causes
-## ============================================================================
-
-:causeEnvironment
-    a vp:CauseInterest ;
-    vp:causeName "Environmental Conservation"@en ;
-    vp:causeDescription "I'm passionate about protecting our planet and want to contribute to local environmental initiatives."@en ;
-    # Reference to a concept in a causes taxonomy
-    vp:causeCategory <https://id.volunteeringdata.io/concept/cause/environment> ;
-.
-
-:causeEducation
-    a vp:CauseInterest ;
-    vp:causeName "Education & Youth Development"@en ;
-    vp:causeDescription "I believe in empowering young people through education and mentorship."@en ;
-    vp:causeCategory <https://id.volunteeringdata.io/concept/cause/education> ;
-.
-
-
-## ============================================================================
-## Skills
-## ============================================================================
-
-:skillEventPlanning
-    a vp:VolunteerSkill ;
-    vp:skillName "Event Planning"@en ;
-    vp:skillLevel "advanced" ;
-    vp:skillCategory <https://id.volunteeringdata.io/concept/skill/organisation> ;
-.
-
-:skillPublicSpeaking
-    a vp:VolunteerSkill ;
-    vp:skillName "Public Speaking"@en ;
-    vp:skillLevel "intermediate" ;
-    vp:skillCategory <https://id.volunteeringdata.io/concept/skill/communication> ;
-.
-
-
-## ============================================================================
-## Languages
-## ============================================================================
-
-:languageEnglish
-    a vp:VolunteerLanguage ;
-    vp:languageName "English"@en ;
-    vp:languageProficiency "native" ;
-.
-
-:languageSpanish
-    a vp:VolunteerLanguage ;
-    vp:languageName "Spanish"@en ;
-    vp:languageProficiency "conversational" ;
-.
-
-
-## ============================================================================
-## Accessibility Requirements
-## ============================================================================
-
-:accessibilityMobility
-    a vp:AccessibilityRequirement ;
-    vp:accessibilityType "mobility" ;
-    vp:accessibilityDescription "Require step-free access to venues."@en ;
-.
-
-
-## ============================================================================
-## Volunteering Preferences
-## ============================================================================
-
-:preferences
-    a vp:VolunteerPreferences ;
-    vp:allowsRemoteVolunteering true ;
-    vp:allowsInPersonVolunteering true ;
-    vp:willingToTravel false ;
-    vp:emergencyAvailability false ;
-.
-
-
-## ============================================================================
-## Search Preferences
-## ============================================================================
-
-:searchPrefs
-    a vp:SearchPreference ;
-    vp:searchRadius "10"^^xsd:decimal ;
-    vp:searchRadiusUnit "km" ;
+:wednesdayEvening
+    a vp:PreferredTime ;
+    vp:day vp:Wednesday ;
+    vp:time vp:Evening ;
 .
