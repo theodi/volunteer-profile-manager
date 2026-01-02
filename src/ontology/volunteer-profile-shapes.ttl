@@ -1,0 +1,515 @@
+# Volunteer Profile SHACL Shapes
+# Validates volunteer profile data conformant to the Volunteer Profile Ontology
+# For use with Solid applications
+
+@prefix sh:              <http://www.w3.org/ns/shacl#> .
+@prefix vp:              <https://id.volunteeringdata.io/volunteer-profile/> .
+@prefix vps:             <https://id.volunteeringdata.io/volunteer-profile/shapes/> .
+@prefix volunteering:    <https://id.volunteeringdata.io/schema/> .
+@prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf:            <http://xmlns.com/foaf/0.1/> .
+@prefix skos:            <http://www.w3.org/2004/02/skos/core#> .
+
+
+## ============================================================================
+## Volunteer Profile Shape
+## ============================================================================
+
+vps:VolunteerProfileShape
+    a sh:NodeShape ;
+    sh:targetClass vp:VolunteerProfile ;
+    rdfs:label "Volunteer Profile Shape"@en ;
+    rdfs:comment "Validates a volunteer profile document."@en ;
+
+    # Link to profile owner (WebID)
+    sh:property [
+        sh:path vp:profileOwner ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name "profile owner" ;
+        sh:description "The person (WebID) who owns this profile." ;
+    ] ;
+
+    # Profile metadata
+    sh:property [
+        sh:path vp:profileCreated ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name "profile created" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:profileModified ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name "profile modified" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:bio ;
+        sh:datatype xsd:string ;
+        sh:maxLength 2000 ;
+        sh:maxCount 1 ;
+        sh:name "bio" ;
+        sh:description "A short biography or description of the volunteer." ;
+    ] ;
+
+    sh:property [
+        sh:path vp:preferredContactMethod ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:in ("email" "phone" "in-app" "messaging") ;
+        sh:name "preferred contact method" ;
+    ] ;
+
+    # Location preferences
+    sh:property [
+        sh:path vp:hasLocationPreference ;
+        sh:node vps:LocationPreferenceShape ;
+        sh:name "location preferences" ;
+        sh:description "Locations where the volunteer is interested in volunteering." ;
+    ] ;
+
+    sh:property [
+        sh:path vp:hasCurrentLocation ;
+        sh:node vps:CurrentLocationShape ;
+        sh:maxCount 1 ;
+        sh:name "current location" ;
+    ] ;
+
+    # Availability
+    sh:property [
+        sh:path vp:hasAvailability ;
+        sh:node vps:AvailabilityShape ;
+        sh:maxCount 1 ;
+        sh:name "availability" ;
+    ] ;
+
+    # Interests and skills
+    sh:property [
+        sh:path vp:hasCauseInterest ;
+        sh:node vps:CauseInterestShape ;
+        sh:name "cause interests" ;
+        sh:description "Charitable causes the volunteer is interested in." ;
+    ] ;
+
+    sh:property [
+        sh:path vp:hasSkill ;
+        sh:node vps:VolunteerSkillShape ;
+        sh:name "skills" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:hasLanguage ;
+        sh:node vps:VolunteerLanguageShape ;
+        sh:name "languages" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:hasAccessibilityRequirement ;
+        sh:node vps:AccessibilityRequirementShape ;
+        sh:name "accessibility requirements" ;
+    ] ;
+
+    # Preferences
+    sh:property [
+        sh:path vp:hasPreferences ;
+        sh:node vps:VolunteerPreferencesShape ;
+        sh:maxCount 1 ;
+        sh:name "preferences" ;
+    ] ;
+
+    # Search preferences
+    sh:property [
+        sh:path vp:hasSearchPreference ;
+        sh:node vps:SearchPreferenceShape ;
+        sh:maxCount 1 ;
+        sh:name "search preferences" ;
+    ] ;
+.
+
+
+## ============================================================================
+## Location Shapes
+## ============================================================================
+
+vps:LocationPreferenceShape
+    a sh:NodeShape ;
+    sh:targetClass vp:LocationPreference ;
+    rdfs:label "Location Preference Shape"@en ;
+
+    sh:property [
+        sh:path vp:locationLabel ;
+        sh:datatype xsd:string ;
+        sh:maxLength 200 ;
+        sh:maxCount 1 ;
+        sh:name "location label" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:address ;
+        sh:datatype xsd:string ;
+        sh:maxLength 500 ;
+        sh:maxCount 1 ;
+        sh:name "address" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:city ;
+        sh:datatype xsd:string ;
+        sh:maxLength 100 ;
+        sh:maxCount 1 ;
+        sh:name "city" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:postalCode ;
+        sh:datatype xsd:string ;
+        sh:maxLength 20 ;
+        sh:maxCount 1 ;
+        sh:name "postal code" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:country ;
+        sh:datatype xsd:string ;
+        sh:maxLength 100 ;
+        sh:maxCount 1 ;
+        sh:name "country" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:latitude ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -90 ;
+        sh:maxInclusive 90 ;
+        sh:maxCount 1 ;
+        sh:name "latitude" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:longitude ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -180 ;
+        sh:maxInclusive 180 ;
+        sh:maxCount 1 ;
+        sh:name "longitude" ;
+    ] ;
+.
+
+vps:CurrentLocationShape
+    a sh:NodeShape ;
+    sh:targetClass vp:CurrentLocation ;
+    rdfs:label "Current Location Shape"@en ;
+
+    sh:property [
+        sh:path vp:address ;
+        sh:datatype xsd:string ;
+        sh:maxLength 500 ;
+        sh:maxCount 1 ;
+        sh:name "address" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:city ;
+        sh:datatype xsd:string ;
+        sh:maxLength 100 ;
+        sh:maxCount 1 ;
+        sh:name "city" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:postalCode ;
+        sh:datatype xsd:string ;
+        sh:maxLength 20 ;
+        sh:maxCount 1 ;
+        sh:name "postal code" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:country ;
+        sh:datatype xsd:string ;
+        sh:maxLength 100 ;
+        sh:maxCount 1 ;
+        sh:name "country" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:latitude ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -90 ;
+        sh:maxInclusive 90 ;
+        sh:maxCount 1 ;
+        sh:name "latitude" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:longitude ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -180 ;
+        sh:maxInclusive 180 ;
+        sh:maxCount 1 ;
+        sh:name "longitude" ;
+    ] ;
+.
+
+
+## ============================================================================
+## Availability Shapes
+## ============================================================================
+
+vps:AvailabilityShape
+    a sh:NodeShape ;
+    sh:targetClass vp:Availability ;
+    rdfs:label "Availability Shape"@en ;
+
+    sh:property [
+        sh:path vp:availableFrom ;
+        sh:datatype xsd:date ;
+        sh:maxCount 1 ;
+        sh:name "available from" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:availableUntil ;
+        sh:datatype xsd:date ;
+        sh:maxCount 1 ;
+        sh:name "available until" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:hoursPerWeek ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 168 ;
+        sh:maxCount 1 ;
+        sh:name "hours per week" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:hasTimeSlot ;
+        sh:node vps:TimeSlotShape ;
+        sh:name "time slots" ;
+    ] ;
+.
+
+vps:TimeSlotShape
+    a sh:NodeShape ;
+    sh:targetClass vp:TimeSlot ;
+    rdfs:label "Time Slot Shape"@en ;
+
+    sh:property [
+        sh:path vp:dayOfWeek ;
+        sh:datatype xsd:string ;
+        sh:in ("Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday" "Sunday") ;
+        sh:maxCount 1 ;
+        sh:name "day of week" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:startTime ;
+        sh:datatype xsd:time ;
+        sh:maxCount 1 ;
+        sh:name "start time" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:endTime ;
+        sh:datatype xsd:time ;
+        sh:maxCount 1 ;
+        sh:name "end time" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:isRecurring ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        sh:name "is recurring" ;
+    ] ;
+.
+
+
+## ============================================================================
+## Cause Interest Shape
+## ============================================================================
+
+vps:CauseInterestShape
+    a sh:NodeShape ;
+    sh:targetClass vp:CauseInterest ;
+    rdfs:label "Cause Interest Shape"@en ;
+
+    sh:property [
+        sh:path vp:causeName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:maxLength 200 ;
+        sh:name "cause name" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:causeDescription ;
+        sh:datatype xsd:string ;
+        sh:maxLength 1000 ;
+        sh:maxCount 1 ;
+        sh:name "cause description" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:causeCategory ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name "cause category" ;
+        sh:description "Reference to a concept in a charitable causes taxonomy." ;
+    ] ;
+.
+
+
+## ============================================================================
+## Skills and Languages Shapes
+## ============================================================================
+
+vps:VolunteerSkillShape
+    a sh:NodeShape ;
+    sh:targetClass vp:VolunteerSkill ;
+    rdfs:label "Volunteer Skill Shape"@en ;
+
+    sh:property [
+        sh:path vp:skillName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:maxLength 200 ;
+        sh:name "skill name" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:skillLevel ;
+        sh:datatype xsd:string ;
+        sh:in ("beginner" "intermediate" "advanced" "expert") ;
+        sh:maxCount 1 ;
+        sh:name "skill level" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:skillCategory ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name "skill category" ;
+        sh:description "Reference to a concept in a skills taxonomy." ;
+    ] ;
+.
+
+vps:VolunteerLanguageShape
+    a sh:NodeShape ;
+    sh:targetClass vp:VolunteerLanguage ;
+    rdfs:label "Volunteer Language Shape"@en ;
+
+    sh:property [
+        sh:path vp:languageName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:maxLength 100 ;
+        sh:name "language name" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:languageProficiency ;
+        sh:datatype xsd:string ;
+        sh:in ("basic" "conversational" "fluent" "native") ;
+        sh:maxCount 1 ;
+        sh:name "language proficiency" ;
+    ] ;
+.
+
+
+## ============================================================================
+## Accessibility Requirement Shape
+## ============================================================================
+
+vps:AccessibilityRequirementShape
+    a sh:NodeShape ;
+    sh:targetClass vp:AccessibilityRequirement ;
+    rdfs:label "Accessibility Requirement Shape"@en ;
+
+    sh:property [
+        sh:path vp:accessibilityType ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:maxLength 100 ;
+        sh:name "accessibility type" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:accessibilityDescription ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:maxLength 1000 ;
+        sh:name "accessibility description" ;
+    ] ;
+.
+
+
+## ============================================================================
+## Preferences Shapes
+## ============================================================================
+
+vps:VolunteerPreferencesShape
+    a sh:NodeShape ;
+    sh:targetClass vp:VolunteerPreferences ;
+    rdfs:label "Volunteer Preferences Shape"@en ;
+
+    sh:property [
+        sh:path vp:allowsRemoteVolunteering ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        sh:name "allows remote volunteering" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:allowsInPersonVolunteering ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        sh:name "allows in-person volunteering" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:willingToTravel ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        sh:name "willing to travel" ;
+    ] ;
+
+    sh:property [
+        sh:path vp:emergencyAvailability ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        sh:name "emergency availability" ;
+    ] ;
+.
+
+vps:SearchPreferenceShape
+    a sh:NodeShape ;
+    sh:targetClass vp:SearchPreference ;
+    rdfs:label "Search Preference Shape"@en ;
+
+    sh:property [
+        sh:path vp:searchRadius ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:maxCount 1 ;
+        sh:name "search radius" ;
+        sh:description "Maximum distance in kilometers to search for opportunities." ;
+    ] ;
+
+    sh:property [
+        sh:path vp:searchRadiusUnit ;
+        sh:datatype xsd:string ;
+        sh:in ("km" "miles") ;
+        sh:maxCount 1 ;
+        sh:name "search radius unit" ;
+    ] ;
+.

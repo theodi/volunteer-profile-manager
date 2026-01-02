@@ -1,0 +1,666 @@
+# Volunteer Profile Ontology
+# Based on requirements from VOLUNTEERING_SRS.md
+# Aligned with the Volunteering Data Model: https://id.volunteeringdata.io/schema/
+
+## Namespaces
+### Ontology Base URI
+@prefix vp:              <https://id.volunteeringdata.io/volunteer-profile/> .
+@prefix volunteering:    <https://id.volunteeringdata.io/schema/> .
+
+### Core W3C ontologies
+@prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:             <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+
+### Other namespaces used
+@prefix dc:              <http://purl.org/dc/terms/> .
+@prefix skos:            <http://www.w3.org/2004/02/skos/core#> .
+@prefix time:            <http://www.w3.org/2006/time#> .
+@prefix vann:            <http://purl.org/vocab/vann/> .
+@prefix foaf:            <http://xmlns.com/foaf/0.1/> .
+@prefix solid:           <http://www.w3.org/ns/solid/terms#> .
+@prefix vcard:           <http://www.w3.org/2006/vcard/ns#> .
+@prefix geo:             <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+
+
+## ============================================================================
+## Ontology Definition
+## ============================================================================
+
+vp:
+    a owl:Ontology ;
+    rdfs:isDefinedBy vp: ;
+    dc:issued "2026-01-02"^^xsd:date ;
+    dc:creator "The Open Data Institute"@en ;
+    vann:preferredNamespacePrefix "vp" ;
+    vann:preferredNamespaceUri "https://id.volunteeringdata.io/volunteer-profile/"^^xsd:anyURI ;
+    rdfs:label "Volunteer Profile Ontology"@en ;
+    dc:title "Volunteer Profile Ontology"@en ;
+    dc:description """Defines a vocabulary for describing volunteer profiles, their preferences, 
+        skills, availability, and interests. Designed for use with Solid pods to enable 
+        decentralized volunteer profile management and opportunity matching."""@en ;
+    owl:imports <https://id.volunteeringdata.io/schema/> ;
+    rdfs:seeAlso <https://id.volunteeringdata.io/schema/> ;
+.
+
+
+## ============================================================================
+## Core Classes
+## ============================================================================
+
+### VolunteerProfile - The central class representing a volunteer's profile
+vp:VolunteerProfile
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:label "Volunteer Profile"@en ;
+    rdfs:comment """A volunteer profile document containing preferences, skills, availability, 
+        and interests for a person who volunteers. This is an extended profile document 
+        separate from the WebID profile."""@en ;
+.
+
+### VolunteerPreferences - Container for volunteer preferences
+vp:VolunteerPreferences
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:label "Volunteer Preferences"@en ;
+    rdfs:comment "A container for a volunteer's preferences regarding volunteering opportunities."@en ;
+.
+
+
+## ============================================================================
+## Location Classes
+## ============================================================================
+
+### LocationPreference - Where a volunteer is willing to help
+vp:LocationPreference
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Location ;
+    rdfs:label "Location Preference"@en ;
+    rdfs:comment """A location where the volunteer is interested in or willing to 
+        participate in volunteering activities."""@en ;
+.
+
+### CurrentLocation - The volunteer's current location
+vp:CurrentLocation
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Location ;
+    rdfs:label "Current Location"@en ;
+    rdfs:comment "The volunteer's current physical location."@en ;
+.
+
+
+## ============================================================================
+## Availability Classes
+## ============================================================================
+
+### Availability - When a volunteer can participate
+vp:Availability
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Time ;
+    rdfs:label "Availability"@en ;
+    rdfs:comment "Time periods when the volunteer is available to participate in activities."@en ;
+.
+
+### TimeSlot - A specific time period
+vp:TimeSlot
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Time ;
+    rdfs:label "Time Slot"@en ;
+    rdfs:comment "A specific recurring or one-time time slot when the volunteer is available."@en ;
+.
+
+
+## ============================================================================
+## Cause and Interest Classes
+## ============================================================================
+
+### CauseInterest - Charitable causes the volunteer is interested in
+vp:CauseInterest
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Cause ;
+    rdfs:label "Cause Interest"@en ;
+    rdfs:comment "A charitable cause that the volunteer is interested in supporting."@en ;
+.
+
+
+## ============================================================================
+## Skills and Requirements Classes
+## ============================================================================
+
+### VolunteerSkill - Skills the volunteer has to offer
+vp:VolunteerSkill
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Skill ;
+    rdfs:label "Volunteer Skill"@en ;
+    rdfs:comment "A skill that the volunteer possesses and can contribute to activities."@en ;
+.
+
+### VolunteerLanguage - Languages the volunteer speaks
+vp:VolunteerLanguage
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Language ;
+    rdfs:label "Volunteer Language"@en ;
+    rdfs:comment "A language that the volunteer speaks and can use in volunteering activities."@en ;
+.
+
+### AccessibilityRequirement - Accessibility needs of the volunteer
+vp:AccessibilityRequirement
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf volunteering:Accessibility ;
+    rdfs:label "Accessibility Requirement"@en ;
+    rdfs:comment "An accessibility requirement or need that the volunteer has."@en ;
+.
+
+
+## ============================================================================
+## Search Preference Classes
+## ============================================================================
+
+### SearchPreference - Preferences for opportunity search
+vp:SearchPreference
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:label "Search Preference"@en ;
+    rdfs:comment """Preferences used when searching for volunteering opportunities, 
+        including distance, activity types, and matching criteria."""@en ;
+.
+
+
+## ============================================================================
+## Object Properties - Relationships
+## ============================================================================
+
+### Profile relationships
+vp:hasProfile
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain foaf:Person ;
+    rdfs:range vp:VolunteerProfile ;
+    rdfs:label "has volunteer profile"@en ;
+    rdfs:comment "Links a person to their volunteer profile document."@en ;
+.
+
+vp:profileOwner
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    owl:inverseOf vp:hasProfile ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range foaf:Person ;
+    rdfs:label "profile owner"@en ;
+    rdfs:comment "The person who owns this volunteer profile."@en ;
+.
+
+### Preferences relationship
+vp:hasPreferences
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:VolunteerPreferences ;
+    rdfs:label "has preferences"@en ;
+    rdfs:comment "Links a volunteer profile to their preferences."@en ;
+.
+
+### Location relationships
+vp:hasLocationPreference
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:location ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:LocationPreference ;
+    rdfs:label "has location preference"@en ;
+    rdfs:comment "A location where the volunteer is interested in volunteering."@en ;
+.
+
+vp:hasCurrentLocation
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:location ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:CurrentLocation ;
+    rdfs:label "has current location"@en ;
+    rdfs:comment "The volunteer's current location."@en ;
+.
+
+### Availability relationships
+vp:hasAvailability
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:time ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:Availability ;
+    rdfs:label "has availability"@en ;
+    rdfs:comment "Links a volunteer profile to their availability information."@en ;
+.
+
+vp:hasTimeSlot
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:Availability ;
+    rdfs:range vp:TimeSlot ;
+    rdfs:label "has time slot"@en ;
+    rdfs:comment "A specific time slot when the volunteer is available."@en ;
+.
+
+### Cause relationships
+vp:hasCauseInterest
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:cause ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:CauseInterest ;
+    rdfs:label "has cause interest"@en ;
+    rdfs:comment "A charitable cause the volunteer is interested in."@en ;
+.
+
+### Skills relationships
+vp:hasSkill
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:skill ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:VolunteerSkill ;
+    rdfs:label "has skill"@en ;
+    rdfs:comment "A skill that the volunteer possesses."@en ;
+.
+
+vp:hasLanguage
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:language ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:VolunteerLanguage ;
+    rdfs:label "has language"@en ;
+    rdfs:comment "A language the volunteer speaks."@en ;
+.
+
+### Accessibility relationships
+vp:hasAccessibilityRequirement
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:accessibility ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:AccessibilityRequirement ;
+    rdfs:label "has accessibility requirement"@en ;
+    rdfs:comment "An accessibility requirement the volunteer has."@en ;
+.
+
+### Search preference relationships
+vp:hasSearchPreference
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:SearchPreference ;
+    rdfs:label "has search preference"@en ;
+    rdfs:comment "Links a volunteer profile to their search preferences for finding opportunities."@en ;
+.
+
+### References to controlled vocabularies/concept schemes
+vp:causeCategory
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:CauseInterest ;
+    rdfs:range skos:Concept ;
+    rdfs:label "cause category"@en ;
+    rdfs:comment "Links a cause interest to a concept in a charitable causes taxonomy."@en ;
+.
+
+vp:skillCategory
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerSkill ;
+    rdfs:range skos:Concept ;
+    rdfs:label "skill category"@en ;
+    rdfs:comment "Links a skill to a concept in a skills taxonomy."@en ;
+.
+
+
+## ============================================================================
+## Datatype Properties
+## ============================================================================
+
+### Profile properties
+vp:profileCreated
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf dc:created ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "profile created"@en ;
+    rdfs:comment "The date and time when the volunteer profile was created."@en ;
+.
+
+vp:profileModified
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf dc:modified ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "profile modified"@en ;
+    rdfs:comment "The date and time when the volunteer profile was last modified."@en ;
+.
+
+vp:bio
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:description ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range xsd:string ;
+    rdfs:label "bio"@en ;
+    rdfs:comment "A short biography or description of the volunteer."@en ;
+.
+
+### Location properties
+vp:address
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:address ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:string ;
+    rdfs:label "address"@en ;
+    rdfs:comment "A textual address for the location."@en ;
+.
+
+vp:latitude
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:latitude ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "latitude"@en ;
+    rdfs:comment "The latitude coordinate of the location."@en ;
+.
+
+vp:longitude
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:longitude ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "longitude"@en ;
+    rdfs:comment "The longitude coordinate of the location."@en ;
+.
+
+vp:postalCode
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:string ;
+    rdfs:label "postal code"@en ;
+    rdfs:comment "The postal or zip code for the location."@en ;
+.
+
+vp:city
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:string ;
+    rdfs:label "city"@en ;
+    rdfs:comment "The city name for the location."@en ;
+.
+
+vp:country
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:string ;
+    rdfs:label "country"@en ;
+    rdfs:comment "The country for the location."@en ;
+.
+
+vp:locationLabel
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:locationLabel ;
+    rdfs:domain vp:LocationPreference ;
+    rdfs:range xsd:string ;
+    rdfs:label "location label"@en ;
+    rdfs:comment "A human-readable label for the location preference."@en ;
+.
+
+### Search/Distance properties
+vp:searchRadius
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:SearchPreference ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "search radius"@en ;
+    rdfs:comment "The maximum distance (in kilometers) from a location to search for opportunities."@en ;
+.
+
+vp:searchRadiusUnit
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:SearchPreference ;
+    rdfs:range xsd:string ;
+    rdfs:label "search radius unit"@en ;
+    rdfs:comment "The unit for the search radius (e.g., 'km', 'miles')."@en ;
+.
+
+### Time/Availability properties
+vp:dayOfWeek
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:TimeSlot ;
+    rdfs:range xsd:string ;
+    rdfs:label "day of week"@en ;
+    rdfs:comment "The day of the week for this time slot (e.g., 'Monday', 'Tuesday')."@en ;
+.
+
+vp:startTime
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:beginning ;
+    rdfs:domain vp:TimeSlot ;
+    rdfs:range xsd:time ;
+    rdfs:label "start time"@en ;
+    rdfs:comment "The start time of the time slot."@en ;
+.
+
+vp:endTime
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:end ;
+    rdfs:domain vp:TimeSlot ;
+    rdfs:range xsd:time ;
+    rdfs:label "end time"@en ;
+    rdfs:comment "The end time of the time slot."@en ;
+.
+
+vp:availableFrom
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:beginning ;
+    rdfs:domain vp:Availability ;
+    rdfs:range xsd:date ;
+    rdfs:label "available from"@en ;
+    rdfs:comment "The date from which the volunteer is available."@en ;
+.
+
+vp:availableUntil
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:end ;
+    rdfs:domain vp:Availability ;
+    rdfs:range xsd:date ;
+    rdfs:label "available until"@en ;
+    rdfs:comment "The date until which the volunteer is available."@en ;
+.
+
+vp:hoursPerWeek
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:Availability ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "hours per week"@en ;
+    rdfs:comment "The number of hours per week the volunteer can commit."@en ;
+.
+
+vp:isRecurring
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:TimeSlot ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is recurring"@en ;
+    rdfs:comment "Whether this time slot recurs regularly."@en ;
+.
+
+### Skill/Cause properties
+vp:skillName
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:label ;
+    rdfs:domain vp:VolunteerSkill ;
+    rdfs:range xsd:string ;
+    rdfs:label "skill name"@en ;
+    rdfs:comment "The name of the skill."@en ;
+.
+
+vp:skillLevel
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerSkill ;
+    rdfs:range xsd:string ;
+    rdfs:label "skill level"@en ;
+    rdfs:comment "The proficiency level of the skill (e.g., 'beginner', 'intermediate', 'expert')."@en ;
+.
+
+vp:causeName
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:conceptLabel ;
+    rdfs:domain vp:CauseInterest ;
+    rdfs:range xsd:string ;
+    rdfs:label "cause name"@en ;
+    rdfs:comment "The name of the charitable cause."@en ;
+.
+
+vp:causeDescription
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:description ;
+    rdfs:domain vp:CauseInterest ;
+    rdfs:range xsd:string ;
+    rdfs:label "cause description"@en ;
+    rdfs:comment "A description of why the volunteer is interested in this cause."@en ;
+.
+
+vp:languageName
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:label ;
+    rdfs:domain vp:VolunteerLanguage ;
+    rdfs:range xsd:string ;
+    rdfs:label "language name"@en ;
+    rdfs:comment "The name of the language."@en ;
+.
+
+vp:languageProficiency
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerLanguage ;
+    rdfs:range xsd:string ;
+    rdfs:label "language proficiency"@en ;
+    rdfs:comment "The proficiency level in the language (e.g., 'native', 'fluent', 'conversational', 'basic')."@en ;
+.
+
+### Preference flags
+vp:allowsRemoteVolunteering
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerPreferences ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "allows remote volunteering"@en ;
+    rdfs:comment "Whether the volunteer is willing to participate in remote/virtual activities."@en ;
+.
+
+vp:allowsInPersonVolunteering
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerPreferences ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "allows in-person volunteering"@en ;
+    rdfs:comment "Whether the volunteer is willing to participate in in-person activities."@en ;
+.
+
+vp:willingToTravel
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerPreferences ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "willing to travel"@en ;
+    rdfs:comment "Whether the volunteer is willing to travel for volunteering opportunities."@en ;
+.
+
+vp:emergencyAvailability
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerPreferences ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "emergency availability"@en ;
+    rdfs:comment "Whether the volunteer is available for emergency volunteering situations."@en ;
+.
+
+### Contact preference (separate from WebID contact info)
+vp:preferredContactMethod
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range xsd:string ;
+    rdfs:label "preferred contact method"@en ;
+    rdfs:comment "The volunteer's preferred method of contact (e.g., 'email', 'phone', 'in-app')."@en ;
+.
+
+### Accessibility requirement properties
+vp:accessibilityDescription
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subPropertyOf volunteering:description ;
+    rdfs:domain vp:AccessibilityRequirement ;
+    rdfs:range xsd:string ;
+    rdfs:label "accessibility description"@en ;
+    rdfs:comment "A description of the accessibility requirement or need."@en ;
+.
+
+vp:accessibilityType
+    a owl:DatatypeProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:AccessibilityRequirement ;
+    rdfs:range xsd:string ;
+    rdfs:label "accessibility type"@en ;
+    rdfs:comment "The type of accessibility requirement (e.g., 'mobility', 'visual', 'hearing', 'cognitive')."@en ;
+.
+
+
+## ============================================================================
+## Individuals - Example Concept Schemes
+## ============================================================================
+
+### Days of week enumeration
+vp:Monday a owl:NamedIndividual ; rdfs:label "Monday"@en .
+vp:Tuesday a owl:NamedIndividual ; rdfs:label "Tuesday"@en .
+vp:Wednesday a owl:NamedIndividual ; rdfs:label "Wednesday"@en .
+vp:Thursday a owl:NamedIndividual ; rdfs:label "Thursday"@en .
+vp:Friday a owl:NamedIndividual ; rdfs:label "Friday"@en .
+vp:Saturday a owl:NamedIndividual ; rdfs:label "Saturday"@en .
+vp:Sunday a owl:NamedIndividual ; rdfs:label "Sunday"@en .
+
+### Skill levels
+vp:BeginnerLevel a owl:NamedIndividual ; rdfs:label "Beginner"@en .
+vp:IntermediateLevel a owl:NamedIndividual ; rdfs:label "Intermediate"@en .
+vp:AdvancedLevel a owl:NamedIndividual ; rdfs:label "Advanced"@en .
+vp:ExpertLevel a owl:NamedIndividual ; rdfs:label "Expert"@en .
+
+### Language proficiency levels
+vp:BasicProficiency a owl:NamedIndividual ; rdfs:label "Basic"@en .
+vp:ConversationalProficiency a owl:NamedIndividual ; rdfs:label "Conversational"@en .
+vp:FluentProficiency a owl:NamedIndividual ; rdfs:label "Fluent"@en .
+vp:NativeProficiency a owl:NamedIndividual ; rdfs:label "Native"@en .
