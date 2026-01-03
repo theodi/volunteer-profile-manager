@@ -1,6 +1,10 @@
 # Volunteer Profile SHACL Shapes
 # Validates volunteer profile data conformant to the Volunteer Profile Ontology
 # For use with Solid applications
+#
+# Reuses standard vocabularies:
+# - W3C Time Ontology for days of the week (time:Monday, etc.)
+# - Custom vp:TimeOfDay for time of day (vp:Morning, vp:Afternoon, vp:Evening)
 
 @prefix sh:              <http://www.w3.org/ns/shacl#> .
 @prefix vp:              <https://id.volunteeringdata.io/volunteer-profile/> .
@@ -9,6 +13,8 @@
 @prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+@prefix geo:             <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix time:            <http://www.w3.org/2006/time#> .
 
 
 ## ============================================================================
@@ -73,6 +79,7 @@ vps:PreferredLocationShape
     rdfs:label "Preferred Location Shape"@en ;
     rdfs:comment "Validates a location preference with coordinates and radius."@en ;
 
+    # Longitude - using vp:long (equivalent to geo:long)
     sh:property [
         sh:path vp:long ;
         sh:datatype xsd:decimal ;
@@ -80,10 +87,11 @@ vps:PreferredLocationShape
         sh:maxInclusive 180 ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:name "long" ;
-        sh:description "Longitude coordinate of the preferred location." ;
+        sh:name "longitude" ;
+        sh:description "Longitude coordinate of the preferred location (WGS84)." ;
     ] ;
 
+    # Latitude - using vp:lat (equivalent to geo:lat)
     sh:property [
         sh:path vp:lat ;
         sh:datatype xsd:decimal ;
@@ -91,17 +99,18 @@ vps:PreferredLocationShape
         sh:maxInclusive 90 ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:name "lat" ;
-        sh:description "Latitude coordinate of the preferred location." ;
+        sh:name "latitude" ;
+        sh:description "Latitude coordinate of the preferred location (WGS84)." ;
     ] ;
 
+    # Radius - custom property for search area
     sh:property [
         sh:path vp:rad ;
         sh:datatype xsd:decimal ;
-        sh:minInclusive 0 ;
+        sh:minExclusive 0 ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:name "rad" ;
+        sh:name "radius" ;
         sh:description "Search radius in kilometers from the location." ;
     ] ;
 .
@@ -115,23 +124,38 @@ vps:PreferredTimeShape
     a sh:NodeShape ;
     sh:targetClass vp:PreferredTime ;
     rdfs:label "Preferred Time Shape"@en ;
-    rdfs:comment "Validates a time preference with day and time."@en ;
+    rdfs:comment "Validates a time preference with day of week and time of day."@en ;
 
+    # Day of week - reuses W3C Time Ontology individuals
     sh:property [
         sh:path vp:day ;
-        sh:in (vp:Monday vp:Tuesday vp:Wednesday vp:Thursday vp:Friday vp:Saturday vp:Sunday) ;
+        sh:in (
+            time:Monday
+            time:Tuesday
+            time:Wednesday
+            time:Thursday
+            time:Friday
+            time:Saturday
+            time:Sunday
+        ) ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:name "day" ;
-        sh:description "The day of the week." ;
+        sh:description "The day of the week (from W3C Time Ontology)." ;
     ] ;
 
+    # Time of day - uses custom vp:TimeOfDay individuals
+    # (skos:relatedMatch to NCIT: ncit:C64934 Morning, ncit:C64935 Afternoon, ncit:C64936 Evening)
     sh:property [
         sh:path vp:time ;
-        sh:in (vp:Morning vp:Afternoon vp:Evening) ;
+        sh:in (
+            vp:Morning
+            vp:Afternoon
+            vp:Evening
+        ) ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:name "time" ;
-        sh:description "The time period of the day (Morning, Afternoon, or Evening)." ;
+        sh:name "time of day" ;
+        sh:description "The time period of the day: Morning, Afternoon, or Evening." ;
     ] ;
 .

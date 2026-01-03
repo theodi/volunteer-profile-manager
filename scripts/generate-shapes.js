@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Generate SHACL shapes from OWL ontology using owl2shacl rules.
+ * Generate SHACL shapes from OWL ontology using owl2shacl-style SPARQL rules.
  * 
- * This script downloads the owl2shacl rules and applies them to the
- * volunteer profile ontology to generate SHACL shapes.
+ * This script applies SPARQL CONSTRUCT queries (based on owl2shacl patterns)
+ * to the volunteer profile ontology to generate SHACL shapes.
  * 
- * Since applying SHACL rules for inference requires specialized tools,
- * this script implements the key transformations from OWL to SHACL directly.
+ * Uses:
+ * - rdf-dereference-store for parsing Turtle files
+ * - Comunica for executing SPARQL CONSTRUCT queries
+ * - shaclc-write for serializing to SHACL Compact Syntax
  * 
  * Usage:
  *   node scripts/generate-shapes.js
@@ -18,11 +20,13 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const { DataFactory, Store } = require('n3');
+const { namedNode, literal } = DataFactory;
 
 // Paths
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const ONTOLOGY_FILE = path.join(PROJECT_ROOT, 'src', 'ontology', 'volunteer-profile.ttl');
-const OUTPUT_FILE = path.join(PROJECT_ROOT, 'src', 'shapes', 'volunteer-profile-shapes-generated.ttl');
+const OUTPUT_FILE = path.join(PROJECT_ROOT, 'src', 'shapes', 'volunteer-profile-shapes-generated.shaclc');
 const RULES_URL = 'https://raw.githubusercontent.com/sparna-git/owl2shacl/refs/heads/main/owl2sh-closed.ttl';
 const RULES_CACHE = path.join(__dirname, '.owl2sh-closed.ttl');
 
@@ -39,190 +43,17 @@ const NS = {
     dc: 'http://purl.org/dc/terms/',
 };
 
-/**
- * Simple Turtle parser for extracting ontology information.
- * This is a minimal implementation for the specific patterns in our ontology.
- */
-class SimpleTurtleParser {
-    constructor(content) {
-        this.content = content;
-        this.prefixes = {};
-        this.triples = [];
-        this.parse();
-    }
-
-    parse() {
-        // Remove comments
-        let cleaned = this.content.replace(/#[^\n]*\n/g, '\n');
-        
-        // Parse prefix declarations
-        const prefixRegex = /@prefix\s+(\w+):\s+<([^>]+)>\s*\./g;
-        let match;
-        while ((match = prefixRegex.exec(cleaned)) !== null) {
-            this.prefixes[match[1]] = match[2];
-        }
-        
-        // Remove prefix declarations for triple parsing
-        cleaned = cleaned.replace(/@prefix[^.]+\./g, '');
-        
-        // Split by periods followed by newlines or end (subject terminators)
-        const statements = cleaned.split(/\.\s*(?=\n|$)/);
-        
-        for (const stmt of statements) {
-            this.parseStatement(stmt.trim());
-        }
-    }
-
-    parseStatement(stmt) {
-        if (!stmt || stmt.length < 3) return;
-        
-        // Find subject (first non-whitespace token)
-        const subjectMatch = stmt.match(/^(\S+)/);
-        if (!subjectMatch) return;
-        
-        const subject = this.expandPrefix(subjectMatch[1]);
-        let rest = stmt.slice(subjectMatch[0].length).trim();
-        
-        // Parse predicate-object pairs (separated by ;)
-        const pairs = rest.split(/\s*;\s*/);
-        
-        for (const pair of pairs) {
-            if (!pair.trim()) continue;
-            
-            // Find predicate and object(s)
-            const parts = pair.trim().split(/\s+/);
-            if (parts.length < 2) continue;
-            
-            const predicate = this.expandPrefix(parts[0]);
-            const objectStr = parts.slice(1).join(' ').trim();
-            
-            // Handle multiple objects (separated by ,)
-            const objects = this.parseObjects(objectStr);
-            
-            for (const obj of objects) {
-                if (subject && predicate && obj) {
-                    this.triples.push({ subject, predicate, object: obj });
-                }
-            }
-        }
-    }
-
-    parseObjects(str) {
-        const objects = [];
-        let current = '';
-        let inString = false;
-        let stringChar = '';
-        let depth = 0;
-        
-        for (let i = 0; i < str.length; i++) {
-            const char = str[i];
-            const prev = i > 0 ? str[i-1] : '';
-            
-            if (!inString && (char === '"' || char === "'")) {
-                inString = true;
-                stringChar = char;
-                // Check for triple quotes
-                if (str.slice(i, i+3) === '"""' || str.slice(i, i+3) === "'''") {
-                    stringChar = str.slice(i, i+3);
-                    current += stringChar;
-                    i += 2;
-                    continue;
-                }
-            } else if (inString) {
-                if (stringChar.length === 3) {
-                    if (str.slice(i, i+3) === stringChar && prev !== '\\') {
-                        current += stringChar;
-                        i += 2;
-                        inString = false;
-                        continue;
-                    }
-                } else if (char === stringChar && prev !== '\\') {
-                    inString = false;
-                }
-            }
-            
-            if (!inString && char === '(' ) depth++;
-            if (!inString && char === ')') depth--;
-            
-            if (!inString && depth === 0 && char === ',') {
-                const obj = this.expandPrefix(current.trim());
-                if (obj) objects.push(obj);
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        
-        if (current.trim()) {
-            const obj = this.expandPrefix(current.trim());
-            if (obj) objects.push(obj);
-        }
-        
-        return objects;
-    }
-
-    expandPrefix(term) {
-        if (!term) return term;
-        
-        // Handle 'a' shorthand for rdf:type
-        if (term === 'a') {
-            return NS.rdf + 'type';
-        }
-        
-        // Handle full URIs
-        if (term.startsWith('<') && term.endsWith('>')) {
-            return term.slice(1, -1);
-        }
-        
-        // Handle literals
-        if (term.startsWith('"') || term.startsWith("'")) {
-            return term;
-        }
-        
-        // Handle prefixed names
-        const prefixMatch = term.match(/^(\w+):(.*)$/);
-        if (prefixMatch) {
-            const prefix = prefixMatch[1];
-            const local = prefixMatch[2];
-            if (this.prefixes[prefix]) {
-                return this.prefixes[prefix] + local;
-            }
-            // Use known namespaces
-            if (NS[prefix]) {
-                return NS[prefix] + local;
-            }
-        }
-        
-        return term;
-    }
-
-    getSubjects(predicate, object) {
-        return this.triples
-            .filter(t => t.predicate === predicate && t.object === object)
-            .map(t => t.subject);
-    }
-
-    getObjects(subject, predicate) {
-        return this.triples
-            .filter(t => t.subject === subject && t.predicate === predicate)
-            .map(t => t.object);
-    }
-
-    getClasses() {
-        const owlClasses = this.getSubjects(NS.rdf + 'type', NS.owl + 'Class');
-        return owlClasses.filter(c => c.startsWith(NS.vp));
-    }
-
-    getObjectProperties() {
-        return this.getSubjects(NS.rdf + 'type', NS.owl + 'ObjectProperty')
-            .filter(p => p.startsWith(NS.vp));
-    }
-
-    getDatatypeProperties() {
-        return this.getSubjects(NS.rdf + 'type', NS.owl + 'DatatypeProperty')
-            .filter(p => p.startsWith(NS.vp));
-    }
-}
+// SPARQL Prefixes
+const SPARQL_PREFIXES = `
+PREFIX vp: <${NS.vp}>
+PREFIX vps: <${NS.vps}>
+PREFIX volunteering: <${NS.volunteering}>
+PREFIX sh: <${NS.sh}>
+PREFIX rdf: <${NS.rdf}>
+PREFIX rdfs: <${NS.rdfs}>
+PREFIX owl: <${NS.owl}>
+PREFIX xsd: <${NS.xsd}>
+`;
 
 /**
  * Download file from URL
@@ -244,178 +75,203 @@ function downloadFile(url) {
 }
 
 /**
- * Generate SHACL shapes from parsed ontology
+ * SPARQL CONSTRUCT rules derived from owl2shacl patterns.
+ * These are simplified versions that work with standard SPARQL.
+ * Reference: https://github.com/sparna-git/owl2shacl
+ * 
+ * The original owl2shacl rules use custom SPARQL functions (sh:SPARQLFunction)
+ * which aren't supported by standard SPARQL engines. These rules implement
+ * the same transformations using standard SPARQL.
  */
-function generateShapes(parser) {
-    const shapes = [];
-    
-    // Header
-    shapes.push(`# Volunteer Profile SHACL Shapes (Auto-generated)
-# Generated from: volunteer-profile.ttl using owl2shacl rules
-# Source rules: ${RULES_URL}
-# Generated: ${new Date().toISOString()}
-
-@prefix sh:              <${NS.sh}> .
-@prefix vp:              <${NS.vp}> .
-@prefix vps:             <${NS.vps}> .
-@prefix volunteering:    <${NS.volunteering}> .
-@prefix rdf:             <${NS.rdf}> .
-@prefix rdfs:            <${NS.rdfs}> .
-@prefix xsd:             <${NS.xsd}> .
-@prefix owl:             <${NS.owl}> .
-
-`);
-
-    // Get all classes
-    const classes = parser.getClasses();
-    const objectProps = parser.getObjectProperties();
-    const datatypeProps = parser.getDatatypeProperties();
-
-    // Build domain -> properties map
-    const domainProps = new Map();
-    
-    for (const prop of [...objectProps, ...datatypeProps]) {
-        const domains = parser.getObjects(prop, NS.rdfs + 'domain');
-        for (const domain of domains) {
-            if (!domainProps.has(domain)) {
-                domainProps.set(domain, []);
-            }
-            domainProps.get(domain).push(prop);
-        }
-    }
-
-    // Generate NodeShape for each class
-    for (const cls of classes) {
-        const localName = cls.replace(NS.vp, '');
-        const shapeUri = `vps:${localName}Shape`;
-        
-        // Get class metadata
-        const labels = parser.getObjects(cls, NS.rdfs + 'label');
-        const comments = parser.getObjects(cls, NS.rdfs + 'comment');
-        
-        shapes.push(`## ${localName} Shape`);
-        shapes.push(`${shapeUri}`);
-        shapes.push(`    a sh:NodeShape ;`);
-        shapes.push(`    sh:targetClass vp:${localName} ;`);
-        shapes.push(`    sh:closed true ;`);
-        
-        if (labels.length > 0) {
-            shapes.push(`    rdfs:label "${cleanLiteral(labels[0])}"@en ;`);
-        }
-        if (comments.length > 0) {
-            shapes.push(`    rdfs:comment """${cleanLiteral(comments[0])}"""@en ;`);
-        }
-        
-        // Add ignoredProperties (always include rdf:type)
-        const props = domainProps.get(cls) || [];
-        const ignoredProps = getIgnoredProperties(parser, cls, classes);
-        
-        if (ignoredProps.length > 0) {
-            shapes.push(`    sh:ignoredProperties ( rdf:type ${ignoredProps.map(formatUri).join(' ')} ) ;`);
-        } else {
-            shapes.push(`    sh:ignoredProperties ( rdf:type ) ;`);
-        }
-        
-        // Add property shapes
-        for (const prop of props) {
-            const propLocalName = prop.replace(NS.vp, '').replace(NS.volunteering, 'volunteering:');
-            const propLabels = parser.getObjects(prop, NS.rdfs + 'label');
-            const propComments = parser.getObjects(prop, NS.rdfs + 'comment');
-            const ranges = parser.getObjects(prop, NS.rdfs + 'range');
-            
-            const isDatatype = datatypeProps.includes(prop);
-            
-            shapes.push(`    sh:property [`);
-            shapes.push(`        sh:path ${formatUri(prop)} ;`);
-            
-            if (ranges.length > 0) {
-                const range = ranges[0];
-                if (isDatatype || range.startsWith(NS.xsd)) {
-                    shapes.push(`        sh:datatype ${formatUri(range)} ;`);
-                } else {
-                    shapes.push(`        sh:class ${formatUri(range)} ;`);
-                }
-            }
-            
-            if (propLabels.length > 0) {
-                shapes.push(`        sh:name "${cleanLiteral(propLabels[0])}" ;`);
-            }
-            if (propComments.length > 0) {
-                shapes.push(`        sh:description """${cleanLiteral(propComments[0])}""" ;`);
-            }
-            
-            shapes.push(`    ] ;`);
-        }
-        
-        // Close the shape
-        shapes.push('.');
-        shapes.push('');
-    }
-
-    return shapes.join('\n');
+const OWL2SHACL_RULES = [
+    {
+        name: "Create NodeShapes from OWL Classes",
+        order: 1,
+        construct: `
+CONSTRUCT {
+    ?shapeUri a sh:NodeShape .
+    ?shapeUri sh:targetClass ?class .
+    ?shapeUri rdfs:label ?label .
+    ?shapeUri rdfs:comment ?comment .
 }
+WHERE {
+    ?class a owl:Class .
+    FILTER(isIRI(?class))
+    FILTER(STRSTARTS(STR(?class), "${NS.vp}"))
+    
+    BIND(IRI(CONCAT("${NS.vps}", STRAFTER(STR(?class), "${NS.vp}"), "Shape")) AS ?shapeUri)
+    
+    OPTIONAL { ?class rdfs:label ?label }
+    OPTIONAL { ?class rdfs:comment ?comment }
+}
+`
+    },
+    {
+        name: "Close NodeShapes",
+        order: 2,
+        construct: `
+CONSTRUCT {
+    ?shape sh:closed true .
+}
+WHERE {
+    ?shape a sh:NodeShape .
+    ?shape sh:targetClass ?class .
+    FILTER(STRSTARTS(STR(?class), "${NS.vp}"))
+}
+`
+    },
+    {
+        name: "Create PropertyShapes from rdfs:domain",
+        order: 3,
+        construct: `
+CONSTRUCT {
+    ?shapeUri sh:property ?propertyShapeUri .
+    ?propertyShapeUri sh:path ?property .
+    ?propertyShapeUri sh:name ?label .
+    ?propertyShapeUri sh:description ?comment .
+}
+WHERE {
+    ?property rdfs:domain ?class .
+    ?class a owl:Class .
+    FILTER(isIRI(?class))
+    FILTER(STRSTARTS(STR(?class), "${NS.vp}"))
+    
+    BIND(IRI(CONCAT("${NS.vps}", STRAFTER(STR(?class), "${NS.vp}"), "Shape")) AS ?shapeUri)
+    
+    # Generate a property shape URI based on class shape and property
+    BIND(
+        IRI(CONCAT(
+            "${NS.vps}",
+            STRAFTER(STR(?class), "${NS.vp}"),
+            "Shape-",
+            IF(CONTAINS(STR(?property), "#"),
+               STRAFTER(STR(?property), "#"),
+               REPLACE(REPLACE(STR(?property), "/", "_"), ":", "_")
+            )
+        ))
+    AS ?propertyShapeUri)
+    
+    OPTIONAL { ?property rdfs:label ?label }
+    OPTIONAL { ?property rdfs:comment ?comment }
+}
+`
+    },
+    {
+        name: "Add sh:class from rdfs:range (Object Properties)",
+        order: 4,
+        construct: `
+CONSTRUCT {
+    ?propertyShapeUri sh:class ?range .
+}
+WHERE {
+    ?property a owl:ObjectProperty .
+    ?property rdfs:domain ?class .
+    ?property rdfs:range ?range .
+    FILTER(isIRI(?class))
+    FILTER(isIRI(?range))
+    FILTER(STRSTARTS(STR(?class), "${NS.vp}"))
+    
+    BIND(
+        IRI(CONCAT(
+            "${NS.vps}",
+            STRAFTER(STR(?class), "${NS.vp}"),
+            "Shape-",
+            IF(CONTAINS(STR(?property), "#"),
+               STRAFTER(STR(?property), "#"),
+               REPLACE(REPLACE(STR(?property), "/", "_"), ":", "_")
+            )
+        ))
+    AS ?propertyShapeUri)
+}
+`
+    },
+    {
+        name: "Add sh:datatype from rdfs:range (Datatype Properties)",
+        order: 5,
+        construct: `
+CONSTRUCT {
+    ?propertyShapeUri sh:datatype ?range .
+}
+WHERE {
+    ?property a owl:DatatypeProperty .
+    ?property rdfs:domain ?class .
+    ?property rdfs:range ?range .
+    FILTER(isIRI(?class))
+    FILTER(isIRI(?range))
+    FILTER(STRSTARTS(STR(?class), "${NS.vp}"))
+    
+    BIND(
+        IRI(CONCAT(
+            "${NS.vps}",
+            STRAFTER(STR(?class), "${NS.vp}"),
+            "Shape-",
+            IF(CONTAINS(STR(?property), "#"),
+               STRAFTER(STR(?property), "#"),
+               REPLACE(REPLACE(STR(?property), "/", "_"), ":", "_")
+            )
+        ))
+    AS ?propertyShapeUri)
+}
+`
+    },
+    {
+        name: "Add sh:maxCount 1 for owl:FunctionalProperty",
+        order: 6,
+        construct: `
+CONSTRUCT {
+    ?propertyShapeUri sh:maxCount 1 .
+}
+WHERE {
+    ?property a owl:FunctionalProperty .
+    ?property rdfs:domain ?class .
+    FILTER(isIRI(?class))
+    FILTER(STRSTARTS(STR(?class), "${NS.vp}"))
+    
+    BIND(
+        IRI(CONCAT(
+            "${NS.vps}",
+            STRAFTER(STR(?class), "${NS.vp}"),
+            "Shape-",
+            IF(CONTAINS(STR(?property), "#"),
+               STRAFTER(STR(?property), "#"),
+               REPLACE(REPLACE(STR(?property), "/", "_"), ":", "_")
+            )
+        ))
+    AS ?propertyShapeUri)
+}
+`
+    },
+];
 
 /**
- * Get ignored properties from subclasses and superclasses
+ * Execute a SPARQL CONSTRUCT query against the data store
  */
-function getIgnoredProperties(parser, cls, allClasses) {
-    const ignored = new Set();
+async function executeConstruct(engine, store, query) {
+    const fullQuery = SPARQL_PREFIXES + query;
     
-    // Get properties from all other classes (simplified - in full implementation
-    // this would traverse class hierarchy)
-    for (const otherCls of allClasses) {
-        if (otherCls !== cls) {
-            const props = parser.triples
-                .filter(t => t.predicate === NS.rdfs + 'domain' && t.object === otherCls)
-                .map(t => t.subject);
-            props.forEach(p => ignored.add(p));
-        }
+    try {
+        const quadStream = await engine.queryQuads(fullQuery, {
+            sources: [store]
+        });
+        return await quadStream.toArray();
+    } catch (err) {
+        console.warn(`  Warning: Query failed - ${err.message}`);
+        return [];
     }
-    
-    return Array.from(ignored);
-}
-
-/**
- * Format a URI as prefixed name or full URI
- */
-function formatUri(uri) {
-    if (!uri) return '[]';
-    
-    // Check known prefixes
-    const prefixOrder = ['vp', 'vps', 'volunteering', 'sh', 'rdf', 'rdfs', 'xsd', 'owl'];
-    for (const prefix of prefixOrder) {
-        if (uri.startsWith(NS[prefix])) {
-            return prefix + ':' + uri.replace(NS[prefix], '');
-        }
-    }
-    
-    return `<${uri}>`;
-}
-
-/**
- * Clean literal value for output
- */
-function cleanLiteral(value) {
-    if (!value) return '';
-    // Remove language tags, datatype annotations, and quotes
-    return value
-        .replace(/@\w+(-\w+)?$/, '')  // Remove language tags like @en, @en-US
-        .replace(/\^\^.+$/, '')        // Remove datatype annotation
-        .replace(/^"""/, '')           // Remove triple quotes start
-        .replace(/"""$/, '')           // Remove triple quotes end
-        .replace(/^"/, '')             // Remove single quotes start
-        .replace(/"$/, '')             // Remove single quotes end
-        .replace(/\n\s+/g, ' ')        // Collapse multi-line into single line
-        .replace(/\s+/g, ' ')          // Normalize whitespace
-        .trim();
 }
 
 /**
  * Main function
  */
 async function main() {
+    // Dynamic imports for ESM modules
+    const { parse } = await import('rdf-dereference-store');
+    const { write } = await import('shaclc-write');
+    const { QueryEngine } = await import('@comunica/query-sparql');
+    
     console.log('========================================');
     console.log('OWL to SHACL Shape Generator (Node.js)');
+    console.log('Using owl2shacl-style SPARQL Rules');
     console.log('========================================');
     console.log('');
 
@@ -426,42 +282,108 @@ async function main() {
     }
     console.log(`✓ Found ontology: ${ONTOLOGY_FILE}`);
 
-    // Download rules (for reference)
+    // Download/cache reference rules (for documentation purposes)
     try {
         if (!fs.existsSync(RULES_CACHE)) {
-            console.log('Downloading owl2shacl rules...');
+            console.log('Downloading owl2shacl rules (for reference)...');
             const rulesContent = await downloadFile(RULES_URL);
             fs.writeFileSync(RULES_CACHE, rulesContent);
-            console.log('✓ Rules downloaded');
+            console.log('✓ Reference rules cached');
         } else {
-            console.log('✓ Using cached owl2shacl rules');
+            console.log('✓ Reference owl2shacl rules available');
         }
     } catch (err) {
-        console.warn('Warning: Could not download rules:', err.message);
+        console.warn('Warning: Could not cache reference rules:', err.message);
     }
 
-    // Parse ontology
+    // Parse ontology using rdf-dereference-store
     console.log('Loading ontology...');
     const ontologyContent = fs.readFileSync(ONTOLOGY_FILE, 'utf-8');
-    const parser = new SimpleTurtleParser(ontologyContent);
-    console.log(`✓ Parsed ${parser.triples.length} triples`);
-    
-    // Show found classes and properties
-    const classes = parser.getClasses();
-    const objectProps = parser.getObjectProperties();
-    const datatypeProps = parser.getDatatypeProperties();
-    console.log(`  Found ${classes.length} classes: ${classes.map(c => c.replace(NS.vp, 'vp:')).join(', ')}`);
-    console.log(`  Found ${objectProps.length} object properties`);
-    console.log(`  Found ${datatypeProps.length} datatype properties`);
+    const { store: ontologyStore } = await parse(ontologyContent, { contentType: 'text/turtle' });
+    console.log(`✓ Parsed ${ontologyStore.size} ontology triples`);
 
-    // Generate shapes
+    // Create a working store with ontology data
+    const workingStore = new Store();
+    for (const q of ontologyStore.getQuads()) {
+        workingStore.add(q);
+    }
+
+    // Create Comunica query engine
+    const engine = new QueryEngine();
+    
+    // Sort rules by order
+    const sortedRules = [...OWL2SHACL_RULES].sort((a, b) => a.order - b.order);
+    
     console.log('');
-    console.log('Generating SHACL shapes...');
-    const shapesContent = generateShapes(parser);
+    console.log(`Applying ${sortedRules.length} owl2shacl-style SPARQL rules...`);
+    
+    const allInferredQuads = [];
+    
+    // Apply rules iteratively until no new quads are generated
+    let iteration = 0;
+    const maxIterations = 5;
+    
+    while (iteration < maxIterations) {
+        iteration++;
+        let totalNewQuads = 0;
+        
+        console.log(`  Iteration ${iteration}:`);
+        
+        for (const rule of sortedRules) {
+            const newQuads = await executeConstruct(engine, workingStore, rule.construct);
+            
+            let addedCount = 0;
+            for (const q of newQuads) {
+                const existing = workingStore.getQuads(q.subject, q.predicate, q.object, q.graph);
+                if (existing.length === 0) {
+                    workingStore.add(q);
+                    allInferredQuads.push(q);
+                    addedCount++;
+                }
+            }
+            
+            if (addedCount > 0) {
+                console.log(`    ${rule.name}: +${addedCount} quads`);
+                totalNewQuads += addedCount;
+            }
+        }
+        
+        if (totalNewQuads === 0) {
+            console.log(`    No new quads generated, stopping.`);
+            break;
+        }
+    }
+    
+    console.log(`✓ Rule application complete`);
+    console.log(`✓ Total inferred quads: ${allInferredQuads.length}`);
+
+    if (allInferredQuads.length === 0) {
+        console.error('Error: No shapes were generated. Check ontology structure.');
+        process.exit(1);
+    }
+
+    // Serialize to SHACL Compact Syntax using shaclc-write
+    console.log('');
+    console.log('Serializing to SHACL Compact Syntax...');
+    const { text } = await write(allInferredQuads, {
+        prefixes: {
+            sh: NS.sh,
+            vp: NS.vp,
+            vps: NS.vps,
+            volunteering: NS.volunteering,
+            rdf: NS.rdf,
+            rdfs: NS.rdfs,
+            xsd: NS.xsd,
+            owl: NS.owl,
+        },
+        extendedSyntax: true,
+        errorOnUnused: false,
+        requireBase: false,
+    });
 
     // Write output
     fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
-    fs.writeFileSync(OUTPUT_FILE, shapesContent);
+    fs.writeFileSync(OUTPUT_FILE, text);
 
     console.log('');
     console.log('✓ SHACL shapes generated successfully!');

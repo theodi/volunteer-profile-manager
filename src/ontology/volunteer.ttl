@@ -1,0 +1,584 @@
+# Volunteer Profile Ontology
+# Based on requirements from VOLUNTEERING_SRS.md and volunteer-profile-ontology.txt
+# Aligned with the Volunteering Data Model: https://id.volunteeringdata.io/schema/
+#
+# FAIR Principles Applied:
+# - Findable: Persistent URIs, rich metadata, versioning, unique identifiers
+# - Accessible: Standard HTTP protocol, open license, machine-readable format
+# - Interoperable: RDF/OWL standards, alignment with existing vocabularies
+# - Reusable: Clear licensing, provenance, comprehensive documentation
+
+## ============================================================================
+## Namespaces
+## ============================================================================
+
+### Ontology Base URI
+@prefix vp:              <https://id.volunteeringdata.io/volunteer-profile/> .
+@prefix volunteering:    <https://id.volunteeringdata.io/schema/> .
+
+### Core W3C ontologies
+@prefix rdf:             <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:            <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:             <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:             <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:            <http://www.w3.org/2004/02/skos/core#> .
+
+### Dublin Core for metadata
+@prefix dc:              <http://purl.org/dc/terms/> .
+@prefix dcat:            <http://www.w3.org/ns/dcat#> .
+
+### Vocabulary metadata
+@prefix vann:            <http://purl.org/vocab/vann/> .
+@prefix voaf:            <http://purl.org/vocommons/voaf#> .
+
+### Provenance and agents
+@prefix foaf:            <http://xmlns.com/foaf/0.1/> .
+@prefix prov:            <http://www.w3.org/ns/prov#> .
+
+### Spatial (for location alignment)
+@prefix geo:             <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix schema:          <https://schema.org/> .
+
+### Time (for temporal alignment)
+@prefix time:            <http://www.w3.org/2006/time#> .
+
+### NCI Thesaurus (for time of day concepts)
+@prefix ncit:            <http://purl.obolibrary.org/obo/NCIT_> .
+
+### Term status
+@prefix vs:              <http://www.w3.org/2003/06/sw-vocab-status/ns#> .
+
+
+## ============================================================================
+## Ontology Definition (FAIR: Findable, Accessible, Reusable)
+## ============================================================================
+
+vp:
+    a owl:Ontology, voaf:Vocabulary ;
+    
+    ## Findable: Unique identifiers and versioning
+    owl:versionIRI <https://id.volunteeringdata.io/volunteer-profile/1.0.0> ;
+    owl:versionInfo "0.0.1" ;
+    
+    ## Findable: Rich metadata for discovery
+    rdfs:label "Volunteer Profile Ontology"@en ;
+    dc:title "Volunteer Profile Ontology"@en ;
+    skos:prefLabel "Volunteer Profile Ontology"@en ;
+    dc:description """An ontology for describing volunteer profiles, 
+        enabling decentralized volunteer profile management and opportunity matching. 
+        Defines location preferences, time availability, skills, requirements, 
+        and charitable cause interests."""@en ;
+    rdfs:comment """This ontology provides a standardized vocabulary for volunteer profile data,
+        designed for interoperability with the Volunteering Data Model."""@en ;
+    
+    ## Findable: Keywords for discoverability
+    dcat:keyword "volunteering"@en, "volunteer profile"@en, "skills matching"@en, "volunteer management"@en ;
+    
+    ## Accessible: Namespace declarations
+    vann:preferredNamespacePrefix "vp" ;
+    vann:preferredNamespaceUri "https://id.volunteeringdata.io/volunteer-profile/"^^xsd:anyURI ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Reusable: Licensing (CC-BY 4.0 - permissive, attribution required)
+    dc:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dc:rights "This ontology is available under the Creative Commons Attribution 4.0 International License."@en ;
+    
+    ## Reusable: Provenance and attribution
+    dc:creator [
+        a foaf:Organization ;
+        foaf:name "The Open Data Institute"@en ;
+        foaf:homepage <https://theodi.org/> ;
+    ] ;
+    dc:publisher [
+        a foaf:Organization ;
+        foaf:name "The Open Data Institute"@en ;
+        foaf:homepage <https://theodi.org/> ;
+    ] ;
+
+    ## Reusable: Temporal metadata
+    dc:issued "2026-01-02"^^xsd:date ;
+    dc:modified "2026-01-03"^^xsd:date ;
+    
+    ## Interoperable: Imports and alignments
+    owl:imports <https://id.volunteeringdata.io/schema/> ;
+.
+
+### VolunteerProfile - The central class representing a volunteer's profile
+vp:VolunteerProfile
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Findable: Multiple labels for discovery
+    rdfs:label "Volunteer Profile"@en ;
+    skos:prefLabel "Volunteer Profile"@en ;
+    skos:altLabel "Volunteer Record"@en ;
+    skos:altLabel "Volunteer Data"@en ;
+    
+    ## Reusable: Comprehensive documentation
+    rdfs:comment """A volunteer profile document containing location preferences, time preferences, 
+        skills, requirements, and charitable cause interests. This is an extended profile document 
+        separate from the WebID profile, designed for storage in a Solid pod."""@en ;
+    skos:definition """A structured representation of a volunteer's preferences and capabilities,
+        including geographic availability, temporal availability, skills inventory, 
+        requirement fulfillment capabilities, and cause interests."""@en ;
+    skos:example """Example: A volunteer profile might specify availability in London (within 10km),
+        on weekday evenings, with first aid skills, access to a vehicle, 
+        and interest in environmental causes."""@en ;
+    skos:scopeNote "Used as the root class for volunteer profile documents in Solid pods."@en ;
+    
+    ## Interoperable: Semantic relationships
+    rdfs:subClassOf foaf:Document ;
+    skos:closeMatch schema:Person ;
+
+    ## VolunteerProfile properties are defined below
+
+    
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+
+## ============================================================================
+## Object Properties (FAIR: Rich documentation, alignments)
+## ============================================================================
+
+### preferredLocation - Where a volunteer prefers to help
+vp:preferredLocation
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:PreferredLocation ;
+    
+    ## Findable: Labels
+    rdfs:label "preferred location"@en ;
+    skos:prefLabel "preferred location"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A location where the volunteer prefers to participate in volunteering activities."@en ;
+    skos:definition "Links a volunteer profile to a geographic location preference specifying where the volunteer is willing to engage in activities."@en ;
+    skos:example "A volunteer profile may have multiple preferred locations, e.g., near home and near workplace."@en ;
+
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+### preferredTime - When a volunteer prefers to help
+vp:preferredTime
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range vp:PreferredTime ;
+    
+    ## Findable: Labels
+    rdfs:label "preferred time"@en ;
+    skos:prefLabel "preferred time"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A time preference indicating when the volunteer is available."@en ;
+    skos:definition "Links a volunteer profile to a temporal preference specifying when the volunteer is available for activities."@en ;
+    skos:example "A volunteer might prefer Monday evenings and Saturday mornings."@en ;
+
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+### hasSkill - Skills the volunteer has (range: CrisisResponseSkills)
+vp:hasSkill
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range volunteering:CrisisResponseSkills ;
+    
+    ## Findable: Labels
+    rdfs:label "has skill"@en ;
+    skos:prefLabel "has skill"@en ;
+    skos:altLabel "volunteer skill"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A crisis response skill that the volunteer possesses."@en ;
+    skos:definition "Links a volunteer profile to a skill from the Crisis Response Skills taxonomy that the volunteer can offer."@en ;
+    skos:example "Skills might include 'First Aid', 'Search and Rescue', 'Logistics Coordination'."@en ;
+    skos:historyNote "Aligned with the Volunteering Data Model crisis response skills taxonomy."@en ;
+    
+    ## Interoperable: Alignments and references
+    skos:broadMatch schema:knowsAbout ;
+
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+### hasRequirement - Requirements the volunteer can meet (range: CrisisResponseRequirement)
+vp:hasRequirement
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range volunteering:CrisisResponseRequirement ;
+    
+    ## Findable: Labels
+    rdfs:label "has requirement"@en ;
+    skos:prefLabel "has requirement"@en ;
+    skos:altLabel "meets requirement"@en ;
+    skos:altLabel "fulfills requirement"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A crisis response requirement that the volunteer can fulfill (e.g., equipment, physical readiness)."@en ;
+    skos:definition "Links a volunteer profile to a requirement from the Crisis Response Requirements taxonomy that the volunteer can satisfy."@en ;
+    skos:example "Requirements might include 'Has Vehicle', 'Physically Fit', 'DBS Checked'."@en ;
+    skos:historyNote "Aligned with the Volunteering Data Model crisis response requirements taxonomy."@en ;
+
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+### preferredCause - Charitable causes the volunteer is interested in (range: Cause)
+vp:preferredCause
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:VolunteerProfile ;
+    rdfs:range volunteering:Cause ;
+    
+    ## Findable: Labels
+    rdfs:label "preferred cause"@en ;
+    skos:prefLabel "preferred cause"@en ;
+    skos:altLabel "cause interest"@en ;
+    skos:altLabel "charitable interest"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A charitable cause that the volunteer is interested in supporting."@en ;
+    skos:definition "Links a volunteer profile to a cause from the Causes taxonomy indicating the volunteer's areas of interest."@en ;
+    skos:example "Causes might include 'Environmental Conservation', 'Homelessness', 'Education'."@en ;
+    skos:historyNote "Uses the Causes vocabulary from the Volunteering Data Model."@en ;
+ 
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+
+## ============================================================================
+## Supporting Classes for preferredLocation (FAIR: Alignments with geo standards)
+## ============================================================================
+
+### PreferredLocation - Container for location preference data
+vp:PreferredLocation
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Findable: Labels
+    rdfs:label "Preferred Location"@en ;
+    skos:prefLabel "Preferred Location"@en ;
+    skos:altLabel "Location Preference"@en ;
+    skos:altLabel "Geographic Preference"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A geographic location preference defined by coordinates and a search radius."@en ;
+    skos:definition """A structured representation of a volunteer's geographic availability,
+        consisting of a central point (latitude/longitude) and a radius defining 
+        the area within which the volunteer is willing to participate."""@en ;
+    skos:example "Central London (51.5074, -0.1278) with a 10km radius."@en ;
+    skos:scopeNote "Uses WGS84 coordinate reference system for interoperability."@en ;
+    
+    ## Interoperable: Alignments with standard geo vocabularies
+    rdfs:subClassOf geo:SpatialThing ;
+    skos:closeMatch schema:GeoCircle ;
+    skos:relatedMatch geo:Point ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+
+    ## A preferred location must have exactly one point, and one radius
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            [ a owl:Restriction ;
+              owl:onProperty vp:point ;
+              owl:cardinality "1"^^xsd:nonNegativeInteger ;
+            ]
+            [ a owl:Restriction ;
+              owl:onProperty vp:rad ;
+              owl:cardinality "1"^^xsd:nonNegativeInteger ;
+            ]
+        ) ;
+    ] ;
+.
+
+vp:Point 
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:subClassOf geo:Point ;
+    
+    ## Findable: Labels
+    rdfs:label "Point"@en ;
+    skos:prefLabel "Point"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A geographic point defined by latitude and longitude coordinates."@en ;
+    skos:definition "A specific location on the Earth's surface defined by WGS84 latitude and longitude."@en ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+
+    ## A point must have exactly one latitude and one longitude property
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            [ a owl:Restriction ;
+              owl:onProperty geo:lat ;
+              owl:cardinality "1"^^xsd:nonNegativeInteger ;
+            ]
+            [ a owl:Restriction ;
+              owl:onProperty geo:long ;
+              owl:cardinality "1"^^xsd:nonNegativeInteger ;
+            ]
+        ) ;
+    ] ;
+.
+
+vp:point 
+    a owl:ObjectProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:PreferredLocation ;
+    rdfs:range vp:Point ;
+    
+    ## Findable: Labels
+    rdfs:label "point"@en ;
+    skos:prefLabel "point"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "The geographic point (latitude/longitude) of the preferred location."@en ;
+    skos:definition "Links a preferred location to its central geographic point defined by latitude and longitude."@en ;
+
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+## ============================================================================
+## Supporting Classes for preferredTime (FAIR: Alignments with time standards)
+## ============================================================================
+
+### PreferredTime - Container for time preference data
+vp:PreferredTime
+    a owl:Class ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Findable: Labels
+    rdfs:label "Preferred Time"@en ;
+    skos:prefLabel "Preferred Time"@en ;
+    skos:altLabel "Time Preference"@en ;
+    skos:altLabel "Availability Window"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "A time preference indicating day of week and time of day."@en ;
+    skos:definition """A structured representation of a volunteer's temporal availability,
+        consisting of a day of the week and a time period (morning, afternoon, evening)."""@en ;
+    skos:example "Monday Evening, Saturday Morning."@en ;
+    skos:scopeNote "Designed for recurring weekly availability patterns."@en ;
+    
+    ## Interoperable: Alignments
+    skos:relatedMatch time:TemporalEntity ;
+    skos:relatedMatch schema:Schedule ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+
+    ## A preferred time must have exactly one day and one time property
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            [ a owl:Restriction ;
+              owl:onProperty vp:day ;
+              owl:cardinality "1"^^xsd:nonNegativeInteger ;
+            ]
+            [ a owl:Restriction ;
+              owl:onProperty vp:time ;
+              owl:cardinality "1"^^xsd:nonNegativeInteger ;
+            ]
+        ) ;
+    ] ;
+.
+
+### TimeOfDay - Reuses NCI Thesaurus (NCIT)
+### Note: This ontology directly reuses NCIT time-of-day concepts:
+### - ncit:C64934 (Morning) - "The time period between dawn and noon"
+### - ncit:C64935 (Afternoon) - "The time period between noon and sunset"
+### - ncit:C64936 (Evening) - "The time period between late afternoon and bedtime"
+### See: https://ncithesaurus.nci.nih.gov/
+
+### DayOfWeek - Reuses W3C Time Ontology
+### Note: This ontology directly reuses time:DayOfWeek and its individuals
+### (time:Monday, time:Tuesday, etc.) rather than defining custom equivalents.
+### See: http://www.w3.org/2006/time#DayOfWeek
+
+### rad - Search radius from the location
+vp:rad
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:PreferredLocation ;
+    rdfs:range xsd:decimal ;
+    
+    ## Findable: Labels
+    rdfs:label "radius"@en ;
+    skos:prefLabel "radius"@en ;
+    skos:altLabel "search radius"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "The radius (in kilometers) around the location coordinates within which the volunteer is willing to participate."@en ;
+    skos:definition "The maximum distance from the center point within which the volunteer is available, measured in kilometers."@en ;
+    skos:example "10 (meaning within 10km of the specified coordinates)"@en ;
+    skos:scopeNote "Unit of measurement is kilometers (km). Must be a positive value."@en ;
+    
+    ## Interoperable: Alignments
+    skos:relatedMatch schema:geoRadius ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+
+## ============================================================================
+## Properties for preferredTime (FAIR: Alignments with time standards)
+## ============================================================================
+
+### day - Day of the week
+vp:day
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:PreferredTime ;
+    rdfs:range time:DayOfWeek ;
+    
+    ## Findable: Labels
+    rdfs:label "day"@en ;
+    skos:prefLabel "day"@en ;
+    skos:altLabel "day of week"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "The day of the week for this time preference."@en ;
+    skos:definition "Links a time preference to a specific day of the week from the W3C Time Ontology."@en ;
+    skos:example "time:Monday, time:Saturday"@en ;
+    skos:scopeNote "Uses W3C Time Ontology individuals: time:Monday, time:Tuesday, time:Wednesday, time:Thursday, time:Friday, time:Saturday, time:Sunday."@en ;
+    
+    ## Interoperable: Alignments
+    skos:closeMatch time:dayOfWeek ;
+    skos:relatedMatch schema:dayOfWeek ;
+    rdfs:seeAlso <http://www.w3.org/2006/time#DayOfWeek> ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+
+    ## The value of day must be one of the time:DayOfWeek individuals
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:oneOf (
+            time:Monday
+            time:Tuesday
+            time:Wednesday
+            time:Thursday
+            time:Friday
+            time:Saturday
+            time:Sunday
+        ) ;
+    ] ;
+.
+
+### time - Time period of the day
+vp:time
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:domain vp:PreferredTime ;
+    
+    ## Findable: Labels
+    rdfs:label "time"@en ;
+    skos:prefLabel "time"@en ;
+    skos:altLabel "time of day"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "The time period of the day (Morning, Afternoon, or Evening)."@en ;
+    skos:definition "Links a time preference to a specific period within the day from the NCI Thesaurus."@en ;
+    skos:example "ncit:C64934 (Morning), ncit:C64935 (Afternoon), ncit:C64936 (Evening)"@en ;
+    skos:scopeNote "Uses NCI Thesaurus individuals: ncit:C64934 (Morning), ncit:C64935 (Afternoon), ncit:C64936 (Evening)."@en ;
+    
+    ## Interoperable: Reference
+    rdfs:seeAlso <https://ncithesaurus.nci.nih.gov/> ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+
+    ## The value of time must be one of the defined TimeOfDay individuals
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:oneOf (
+            vp:Morning
+            vp:Afternoon
+            vp:Evening
+        ) ;
+    ] ;
+.
+
+vp:Morning
+    a vp:TimeOfDay, owl:NamedIndividual, skos:Concept ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Findable: Labels
+    rdfs:label "Morning"@en ;
+    skos:prefLabel "Morning"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "Morning time period, typically 06:00-12:00."@en ;
+    skos:definition "The morning period of the day, approximately from 6am to noon."@en ;
+    skos:notation "AM" ;
+    
+    ## Semantic relationships
+    skos:inScheme vp:TimeOfDayScheme ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+vp:Afternoon
+    a vp:TimeOfDay, owl:NamedIndividual, skos:Concept ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Findable: Labels
+    rdfs:label "Afternoon"@en ;
+    skos:prefLabel "Afternoon"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "Afternoon time period, typically 12:00-18:00."@en ;
+    skos:definition "The afternoon period of the day, approximately from noon to 6pm."@en ;
+    skos:notation "PM" ;
+    
+    ## Semantic relationships
+    skos:inScheme vp:TimeOfDayScheme ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+vp:Evening
+    a vp:TimeOfDay, owl:NamedIndividual, skos:Concept ;
+    rdfs:isDefinedBy vp: ;
+    
+    ## Findable: Labels
+    rdfs:label "Evening"@en ;
+    skos:prefLabel "Evening"@en ;
+    
+    ## Reusable: Documentation
+    rdfs:comment "Evening time period, typically 18:00-22:00."@en ;
+    skos:definition "The evening period of the day, approximately from 6pm to 10pm."@en ;
+    skos:notation "EVE" ;
+    
+    ## Semantic relationships
+    skos:inScheme vp:TimeOfDayScheme ;
+    
+    ## Term status
+    vs:term_status "testing" ;
+.
+
+### TimeOfDay Concept Scheme
+vp:TimeOfDayScheme
+    a skos:ConceptScheme ;
+    rdfs:isDefinedBy vp: ;
+    rdfs:label "Time of Day Scheme"@en ;
+    skos:prefLabel "Time of Day Scheme"@en ;
+    dc:description "A controlled vocabulary of time periods within a day."@en ;
+    skos:hasTopConcept vp:Morning, vp:Afternoon, vp:Evening ;
+.
