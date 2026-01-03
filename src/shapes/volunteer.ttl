@@ -44,25 +44,150 @@ vps:VolunteerProfileShape
     ] ;
 
     # Skills (range: CrisisResponseSkills from crisis.ttl)
+    # Values from https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl
     sh:property [
         sh:path vp:hasSkill ;
-        sh:node vps:CrisisResponseSkillsShape ;
+        sh:in (
+            # Personal and Interpersonal Skills
+            volunteering:EmpathyAndCompassion
+            volunteering:CalmnessUnderPressure
+            volunteering:PatienceAndUnderstanding
+            volunteering:ReliabilityAndTrustworthiness
+            volunteering:RespectForProfessionalBoundaries
+            volunteering:CulturalSensitivity
+            volunteering:TraumaInformedAwareness
+            volunteering:ConflictDeescalation
+            # Communication Skills
+            volunteering:ClearSpokenCommunication
+            volunteering:ActiveListening
+            volunteering:AbilityToRelayAccurateInformation
+            volunteering:SupportingPeopleViaPhoneOnline
+            volunteering:UseOfRadiosAndWalkieTalkies
+            volunteering:ConfidenceEngagingWithPublicOrGroups
+            # Teamwork and Leadership Skills
+            volunteering:AbilityToWorkCooperatively
+            volunteering:AbilityToWorkIndependently
+            volunteering:LeadingSmallGroupsOrTasks
+            volunteering:ManagingConflictWithinTeams
+            volunteering:SupportingOrMentoringNewVolunteers
+            # Safety and Emergency Awareness Skills
+            volunteering:UnderstandingEmergencyBriefingsAndInstructions
+            volunteering:BasicSafeguardingKnowledge
+            volunteering:RiskAwareness
+            volunteering:SafeManualHandling
+            volunteering:IncidentReporting
+            volunteering:BasicFirstAidKnowledge
+            volunteering:FireSafetyAwareness
+            volunteering:WaterSafetyAwareness
+            # Practical and Operational Skills
+            volunteering:Logistics
+            volunteering:ShelterSupport
+            volunteering:BasicRecordKeeping
+            volunteering:UseOfBasicEquipment
+            volunteering:NavigationAndOrientation
+            volunteering:Driving
+            volunteering:CrowdQueueManagement
+            volunteering:PilotLicense
+            volunteering:HGVCategoryD
+            # Digital and Technology Skills
+            volunteering:BasicITSkills
+            volunteering:ConfidentSmartphoneUse
+            volunteering:FamiliarityWithRemoteCommunicationTools
+            volunteering:SimpleDataEntryAndReporting
+            volunteering:ResponsibleHandlingOfSocialMedia
+            # Community Skills
+            volunteering:KnowledgeOfLocalRoadsFacilitiesResources
+            volunteering:UnderstandingDiverseNeedsWithinCommunity
+            volunteering:AwarenessOfLocalSupportServices
+        ) ;
         sh:name "has skill" ;
         sh:description "Crisis response skills the volunteer possesses." ;
     ] ;
 
     # Requirements (range: CrisisResponseRequirement from crisis.ttl)
+    # Values from https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl
     sh:property [
         sh:path vp:hasRequirement ;
-        sh:node vps:CrisisResponseRequirementShape ;
+        sh:in (
+            # Physical and Practical Readiness
+            volunteering:PhysicalStamina
+            volunteering:AbilityToWorkOutdoors
+            volunteering:PersonalPreparedness
+            # Assets and Equipment
+            volunteering:SturdyFootwear
+            volunteering:WaterproofsAndWarmLayers
+            volunteering:Gloves
+            volunteering:HighVisibilityVest
+            volunteering:HeadtorchOrFlashlight
+            volunteering:PhoneAndPowerBank
+            volunteering:SmallPersonalFirstAidKit
+            volunteering:WaterBottle
+            volunteering:FourByFourVehicle
+            volunteering:SUVOrOffRoadVehicle
+            volunteering:VehicleWithTowCapability
+            volunteering:AccessToVanOrPeopleCarrier
+            volunteering:AbilityToTransportEquipmentOrSupplies
+            volunteering:AccessToBicyclesOrCargoBikes
+            volunteering:Boat
+            volunteering:Hovercraft
+            volunteering:WalkieTalkiesOrRadios
+            volunteering:PortableGeneratorOrPowerStation
+            volunteering:WaterPump
+            volunteering:Tools
+            volunteering:PortableShelterOrGazebo
+            volunteering:ThermalBlankets
+            volunteering:PPE
+            volunteering:MapsOrWaterproofMapCases
+            volunteering:LifeJacket
+            volunteering:Venue
+            volunteering:Kitchen
+        ) ;
         sh:name "has requirement" ;
         sh:description "Crisis response requirements the volunteer can fulfill." ;
     ] ;
 
     # Preferred causes (range: Cause from vocabulary.ttl)
+    # Note: These causes are provisional placeholders. The Cause class is defined in the
+    # volunteering vocabulary but specific cause individuals are not yet enumerated in the
+    # ontology. These values should be updated when the official causes taxonomy is published.
     sh:property [
         sh:path vp:preferredCause ;
-        sh:node vps:CauseShape ;
+        sh:in (
+            # Health and Wellbeing
+            volunteering:MentalHealth
+            volunteering:PhysicalHealth
+            volunteering:DisabilitySupport
+            volunteering:ElderCare
+            # Education and Youth
+            volunteering:Education
+            volunteering:YouthDevelopment
+            volunteering:Mentoring
+            volunteering:Literacy
+            # Environment
+            volunteering:EnvironmentalConservation
+            volunteering:ClimateAction
+            volunteering:WildlifeProtection
+            volunteering:SustainableLiving
+            # Community and Social
+            volunteering:Homelessness
+            volunteering:FoodSecurity
+            volunteering:CommunityDevelopment
+            volunteering:SocialInclusion
+            volunteering:RefugeeSupport
+            # Arts and Culture
+            volunteering:ArtsAndCulture
+            volunteering:HeritagePreservation
+            volunteering:Sports
+            # Emergency and Crisis
+            volunteering:DisasterRelief
+            volunteering:EmergencyResponse
+            # Animal Welfare
+            volunteering:AnimalWelfare
+            volunteering:AnimalRescue
+            # International
+            volunteering:InternationalDevelopment
+            volunteering:HumanRights
+        ) ;
         sh:name "preferred cause" ;
         sh:description "Charitable causes the volunteer is interested in." ;
     ] ;
@@ -77,30 +202,16 @@ vps:PreferredLocationShape
     a sh:NodeShape ;
     sh:targetClass vp:PreferredLocation ;
     rdfs:label "Preferred Location Shape"@en ;
-    rdfs:comment "Validates a location preference with coordinates and radius."@en ;
+    rdfs:comment "Validates a location preference with a geographic point and radius."@en ;
 
-    # Longitude - using vp:long (equivalent to geo:long)
+    # Point - using vp:point with nested PointShape
     sh:property [
-        sh:path vp:long ;
-        sh:datatype xsd:decimal ;
-        sh:minInclusive -180 ;
-        sh:maxInclusive 180 ;
+        sh:path vp:point ;
+        sh:node vps:PointShape ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:name "longitude" ;
-        sh:description "Longitude coordinate of the preferred location (WGS84)." ;
-    ] ;
-
-    # Latitude - using vp:lat (equivalent to geo:lat)
-    sh:property [
-        sh:path vp:lat ;
-        sh:datatype xsd:decimal ;
-        sh:minInclusive -90 ;
-        sh:maxInclusive 90 ;
-        sh:minCount 1 ;
-        sh:maxCount 1 ;
-        sh:name "latitude" ;
-        sh:description "Latitude coordinate of the preferred location (WGS84)." ;
+        sh:name "point" ;
+        sh:description "The geographic point (latitude/longitude) of the preferred location." ;
     ] ;
 
     # Radius - custom property for search area
@@ -112,6 +223,42 @@ vps:PreferredLocationShape
         sh:maxCount 1 ;
         sh:name "radius" ;
         sh:description "Search radius in kilometers from the location." ;
+    ] ;
+.
+
+
+## ============================================================================
+## Point Shape
+## ============================================================================
+
+vps:PointShape
+    a sh:NodeShape ;
+    sh:targetClass vp:Point ;
+    rdfs:label "Point Shape"@en ;
+    rdfs:comment "Validates a geographic point with WGS84 coordinates."@en ;
+
+    # Latitude - using geo:lat from W3C Geo vocabulary
+    sh:property [
+        sh:path geo:lat ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -90 ;
+        sh:maxInclusive 90 ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name "latitude" ;
+        sh:description "Latitude coordinate in WGS84 (-90 to 90)." ;
+    ] ;
+
+    # Longitude - using geo:long from W3C Geo vocabulary
+    sh:property [
+        sh:path geo:long ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive -180 ;
+        sh:maxInclusive 180 ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name "longitude" ;
+        sh:description "Longitude coordinate in WGS84 (-180 to 180)." ;
     ] ;
 .
 
@@ -158,133 +305,4 @@ vps:PreferredTimeShape
         sh:name "time of day" ;
         sh:description "The time period of the day: Morning, Afternoon, or Evening." ;
     ] ;
-.
-
-
-## ============================================================================
-## Crisis Response Skills Shape
-## ============================================================================
-## Values from https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl
-
-vps:CrisisResponseSkillsShape
-    a sh:NodeShape ;
-    sh:targetClass volunteering:CrisisResponseSkills ;
-    rdfs:label "Crisis Response Skills Shape"@en ;
-    rdfs:comment "Validates crisis response skills values."@en ;
-    sh:in (
-        # Personal and Interpersonal Skills
-        volunteering:EmpathyAndCompassion
-        volunteering:CalmnessUnderPressure
-        volunteering:PatienceAndUnderstanding
-        volunteering:ReliabilityAndTrustworthiness
-        volunteering:RespectForProfessionalBoundaries
-        volunteering:CulturalSensitivity
-        volunteering:TraumaInformedAwareness
-        volunteering:ConflictDeescalation
-        # Communication Skills
-        volunteering:ClearSpokenCommunication
-        volunteering:ActiveListening
-        volunteering:AbilityToRelayAccurateInformation
-        volunteering:SupportingPeopleViaPhoneOnline
-        volunteering:UseOfRadiosAndWalkieTalkies
-        volunteering:ConfidenceEngagingWithPublicOrGroups
-        # Teamwork and Leadership Skills
-        volunteering:AbilityToWorkCooperatively
-        volunteering:AbilityToWorkIndependently
-        volunteering:LeadingSmallGroupsOrTasks
-        volunteering:ManagingConflictWithinTeams
-        volunteering:SupportingOrMentoringNewVolunteers
-        # Safety and Emergency Awareness Skills
-        volunteering:UnderstandingEmergencyBriefingsAndInstructions
-        volunteering:BasicSafeguardingKnowledge
-        volunteering:RiskAwareness
-        volunteering:SafeManualHandling
-        volunteering:IncidentReporting
-        volunteering:BasicFirstAidKnowledge
-        volunteering:FireSafetyAwareness
-        volunteering:WaterSafetyAwareness
-        # Practical and Operational Skills
-        volunteering:Logistics
-        volunteering:ShelterSupport
-        volunteering:BasicRecordKeeping
-        volunteering:UseOfBasicEquipment
-        volunteering:NavigationAndOrientation
-        volunteering:Driving
-        volunteering:CrowdQueueManagement
-        volunteering:PilotLicense
-        volunteering:HGVCategoryD
-        # Digital and Technology Skills
-        volunteering:BasicITSkills
-        volunteering:ConfidentSmartphoneUse
-        volunteering:FamiliarityWithRemoteCommunicationTools
-        volunteering:SimpleDataEntryAndReporting
-        volunteering:ResponsibleHandlingOfSocialMedia
-        # Community Skills
-        volunteering:KnowledgeOfLocalRoadsFacilitiesResources
-        volunteering:UnderstandingDiverseNeedsWithinCommunity
-        volunteering:AwarenessOfLocalSupportServices
-    ) ;
-.
-
-
-## ============================================================================
-## Crisis Response Requirement Shape
-## ============================================================================
-## Values from https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl
-
-vps:CrisisResponseRequirementShape
-    a sh:NodeShape ;
-    sh:targetClass volunteering:CrisisResponseRequirement ;
-    rdfs:label "Crisis Response Requirement Shape"@en ;
-    rdfs:comment "Validates crisis response requirement values."@en ;
-    sh:in (
-        # Physical and Practical Readiness
-        volunteering:PhysicalStamina
-        volunteering:AbilityToWorkOutdoors
-        volunteering:PersonalPreparedness
-        # Assets and Equipment
-        volunteering:SturdyFootwear
-        volunteering:WaterproofsAndWarmLayers
-        volunteering:Gloves
-        volunteering:HighVisibilityVest
-        volunteering:HeadtorchOrFlashlight
-        volunteering:PhoneAndPowerBank
-        volunteering:SmallPersonalFirstAidKit
-        volunteering:WaterBottle
-        volunteering:FourByFourVehicle
-        volunteering:SUVOrOffRoadVehicle
-        volunteering:VehicleWithTowCapability
-        volunteering:AccessToVanOrPeopleCarrier
-        volunteering:AbilityToTransportEquipmentOrSupplies
-        volunteering:AccessToBicyclesOrCargoBikes
-        volunteering:Boat
-        volunteering:Hovercraft
-        volunteering:WalkieTalkiesOrRadios
-        volunteering:PortableGeneratorOrPowerStation
-        volunteering:WaterPump
-        volunteering:Tools
-        volunteering:PortableShelterOrGazebo
-        volunteering:ThermalBlankets
-        volunteering:PPE
-        volunteering:MapsOrWaterproofMapCases
-        volunteering:LifeJacket
-        volunteering:Venue
-        volunteering:Kitchen
-    ) ;
-.
-
-
-## ============================================================================
-## Cause Shape
-## ============================================================================
-## Note: The Cause class is defined in the volunteering vocabulary but specific
-## cause individuals are not enumerated in the ontology. This shape validates
-## that the value is of type volunteering:Cause. Applications should populate
-## cause values from the vocabulary service or define application-specific causes.
-
-vps:CauseShape
-    a sh:NodeShape ;
-    sh:targetClass volunteering:Cause ;
-    rdfs:label "Cause Shape"@en ;
-    rdfs:comment "Validates charitable cause values. Causes are instances of volunteering:Cause from the Volunteering Data Model vocabulary."@en ;
 .
