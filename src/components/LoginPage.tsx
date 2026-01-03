@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSolidAuth } from "@ldo/solid-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const PRESET_ISSUERS = [
   {
@@ -19,14 +19,18 @@ const PRESET_ISSUERS = [
   },
 ];
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { session, login } = useSolidAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [issuerInput, setIssuerInput] = useState<string>(
     process.env.NEXT_PUBLIC_OIDC_ISSUER || ""
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if we're in the middle of an OAuth callback
+  const isOAuthCallback = searchParams.has("code") || searchParams.has("state");
 
   // Redirect to home if already authenticated
   useEffect(() => {
@@ -35,8 +39,18 @@ export default function LoginPage() {
     }
   }, [session.isLoggedIn, router]);
 
-  if (session.isLoggedIn) {
-    return null;
+  // Show loading screen during OAuth callback or when already logged in (waiting for redirect)
+  if (isOAuthCallback || session.isLoggedIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">
+            {session.isLoggedIn ? "Redirecting..." : "Completing sign in..."}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const validateIssuerUrl = (url: string): boolean => {
@@ -221,5 +235,22 @@ export default function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

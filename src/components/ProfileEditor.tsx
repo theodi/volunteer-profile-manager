@@ -123,22 +123,22 @@ export const CAUSES = [
   { id: "HumanRights", label: "Human Rights", category: "International" },
 ];
 
-// Days of week from W3C Time Ontology
+// Days of week from W3C Time Ontology (using full URIs as stored in RDF)
 export const DAYS_OF_WEEK = [
-  { id: "Monday", label: "Monday" },
-  { id: "Tuesday", label: "Tuesday" },
-  { id: "Wednesday", label: "Wednesday" },
-  { id: "Thursday", label: "Thursday" },
-  { id: "Friday", label: "Friday" },
-  { id: "Saturday", label: "Saturday" },
-  { id: "Sunday", label: "Sunday" },
+  { id: "http://www.w3.org/2006/time#Monday", label: "Monday" },
+  { id: "http://www.w3.org/2006/time#Tuesday", label: "Tuesday" },
+  { id: "http://www.w3.org/2006/time#Wednesday", label: "Wednesday" },
+  { id: "http://www.w3.org/2006/time#Thursday", label: "Thursday" },
+  { id: "http://www.w3.org/2006/time#Friday", label: "Friday" },
+  { id: "http://www.w3.org/2006/time#Saturday", label: "Saturday" },
+  { id: "http://www.w3.org/2006/time#Sunday", label: "Sunday" },
 ];
 
-// Times of day
+// Times of day (using full URIs as stored in RDF)
 export const TIMES_OF_DAY = [
-  { id: "Morning", label: "Morning" },
-  { id: "Afternoon", label: "Afternoon" },
-  { id: "Evening", label: "Evening" },
+  { id: "https://id.volunteeringdata.io/volunteer-profile/Morning", label: "Morning" },
+  { id: "https://id.volunteeringdata.io/volunteer-profile/Afternoon", label: "Afternoon" },
+  { id: "https://id.volunteeringdata.io/volunteer-profile/Evening", label: "Evening" },
 ];
 
 export default function ProfileEditor() {
@@ -172,13 +172,6 @@ export default function ProfileEditor() {
     webIdProfile?.img?.["@id"] || 
     (webIdProfileAny?.hasPhoto as { "@id": string } | undefined)?.["@id"] ||
     (webIdProfileAny?.depiction as { "@id": string } | undefined)?.["@id"];
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!session.isLoggedIn) {
-      router.replace("/login");
-    }
-  }, [session.isLoggedIn, router]);
 
   // Close profile menu when clicking outside
   useEffect(() => {

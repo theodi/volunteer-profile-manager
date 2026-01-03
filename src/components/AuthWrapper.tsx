@@ -34,6 +34,7 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [hasSessionIndicator] = useState(() => hasSessionInStorage());
   const [wasLoggedIn, setWasLoggedIn] = useState(false);
+  const [hasCompletedOAuth, setHasCompletedOAuth] = useState(false);
 
   // Check if we're in the middle of an OAuth callback
   const isOAuthCallback = searchParams.has("code") || searchParams.has("state");
@@ -44,24 +45,32 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
     session.clientAppId
   );
 
+  // Track when user becomes logged in
   useEffect(() => {
     if (session.isLoggedIn) {
       setWasLoggedIn(true);
+      if (isOAuthCallback) {
+        setHasCompletedOAuth(true);
+      }
     }
+  }, [session.isLoggedIn, isOAuthCallback]);
 
-    // If we're in an OAuth callback, keep checking until session is established
+  useEffect(() => {
+    // If we're in an OAuth callback, wait for session to be established
     if (isOAuthCallback) {
       setIsCheckingSession(true);
 
       if (session.isLoggedIn) {
         setIsCheckingSession(false);
+        // Clean redirect after successful OAuth
         const redirectTimer = setTimeout(() => {
           if (typeof window !== "undefined") {
             window.location.href = "/";
           }
-        }, 200);
+        }, 100);
         return () => clearTimeout(redirectTimer);
       } else {
+        // Wait longer for OAuth to complete
         const maxWaitTimer = setTimeout(() => {
           setIsCheckingSession(false);
         }, 10000);
@@ -69,6 +78,7 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
       }
     }
 
+    // User is logged in - stop checking and redirect from login if needed
     if (session.isLoggedIn) {
       setIsCheckingSession(false);
       if (isLoginPage) {
@@ -77,7 +87,19 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
       return;
     }
 
-    if (wasLoggedIn && !session.isLoggedIn) {
+    // User just completed OAuth and landed on home page - don't redirect to login
+    if (hasCompletedOAuth && !isLoginPage) {
+      // Give more time for session to stabilize after OAuth
+      const oauthStabilizeTimer = setTimeout(() => {
+        if (!session.isLoggedIn) {
+          setIsCheckingSession(false);
+        }
+      }, 3000);
+      return () => clearTimeout(oauthStabilizeTimer);
+    }
+
+    // User was logged in but now logged out - redirect to login
+    if (wasLoggedIn && !session.isLoggedIn && !hasCompletedOAuth) {
       setIsCheckingSession(false);
       if (!isLoginPage) {
         router.replace("/login");
@@ -85,16 +107,18 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
       return;
     }
 
+    // Initial page load - check for existing session
     const shouldWaitForRestore = hasSessionData || hasSessionIndicator;
     const checkTimer = setTimeout(
       () => {
         setIsCheckingSession(false);
 
-        if (!session.isLoggedIn && !isLoginPage && !isOAuthCallback) {
+        // Only redirect to login if not in OAuth flow and no session
+        if (!session.isLoggedIn && !isLoginPage && !isOAuthCallback && !hasCompletedOAuth) {
           router.replace("/login");
         }
       },
-      shouldWaitForRestore ? 2000 : 200
+      shouldWaitForRestore ? 3000 : 500
     );
 
     return () => clearTimeout(checkTimer);
@@ -106,6 +130,7 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
     hasSessionIndicator,
     hasSessionData,
     wasLoggedIn,
+    hasCompletedOAuth,
     isLoginPage,
     router,
   ]);
