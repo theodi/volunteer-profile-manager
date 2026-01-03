@@ -10,6 +10,8 @@ import LocationEditor from "./editor/LocationEditor";
 import TimeEditor from "./editor/TimeEditor";
 import SkillsEditor from "./editor/SkillsEditor";
 import CausesEditor from "./editor/CausesEditor";
+import { toVolunteeringUri, toVolunteerProfileUri, toTimeUri } from "@/lib/namespaces";
+import { deriveProfileUri, getErrorStatusCode, formatErrorMessage } from "@/lib/solidUtils";
 
 // Available skills from SHACL shapes
 export const SKILLS = [
@@ -125,20 +127,20 @@ export const CAUSES = [
 
 // Days of week from W3C Time Ontology (using full URIs as stored in RDF)
 export const DAYS_OF_WEEK = [
-  { id: "http://www.w3.org/2006/time#Monday", label: "Monday" },
-  { id: "http://www.w3.org/2006/time#Tuesday", label: "Tuesday" },
-  { id: "http://www.w3.org/2006/time#Wednesday", label: "Wednesday" },
-  { id: "http://www.w3.org/2006/time#Thursday", label: "Thursday" },
-  { id: "http://www.w3.org/2006/time#Friday", label: "Friday" },
-  { id: "http://www.w3.org/2006/time#Saturday", label: "Saturday" },
-  { id: "http://www.w3.org/2006/time#Sunday", label: "Sunday" },
+  { id: toTimeUri("Monday"), label: "Monday" },
+  { id: toTimeUri("Tuesday"), label: "Tuesday" },
+  { id: toTimeUri("Wednesday"), label: "Wednesday" },
+  { id: toTimeUri("Thursday"), label: "Thursday" },
+  { id: toTimeUri("Friday"), label: "Friday" },
+  { id: toTimeUri("Saturday"), label: "Saturday" },
+  { id: toTimeUri("Sunday"), label: "Sunday" },
 ];
 
 // Times of day (using full URIs as stored in RDF)
 export const TIMES_OF_DAY = [
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Morning", label: "Morning" },
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Afternoon", label: "Afternoon" },
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Evening", label: "Evening" },
+  { id: toVolunteerProfileUri("Morning"), label: "Morning" },
+  { id: toVolunteerProfileUri("Afternoon"), label: "Afternoon" },
+  { id: toVolunteerProfileUri("Evening"), label: "Evening" },
 ];
 
 export default function ProfileEditor() {
@@ -151,10 +153,8 @@ export default function ProfileEditor() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Derive the profile URI from the WebID
-  const profileUri = session.webId
-    ? session.webId.replace(/\/profile\/card#me$/, "/volunteer/profile")
-    : undefined;
+  // Derive the profile URI from the WebID using robust pattern matching
+  const profileUri = deriveProfileUri(session.webId);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
@@ -312,14 +312,30 @@ export default function ProfileEditor() {
       setSaveMessage({ type: "success", text: "Profile saved successfully!" });
     } catch (error) {
       console.error("Save error:", error);
+      
+      // Handle specific HTTP error codes
+      const statusCode = getErrorStatusCode(error);
+      
+      if (statusCode === 401) {
+        // Authentication expired - redirect to login
+        setSaveMessage({
+          type: "error",
+          text: "Your session has expired. Please log in again.",
+        });
+        await logout();
+        router.replace("/login");
+        return;
+      }
+      
+      // Use formatted error message for other errors
       setSaveMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to save profile",
+        text: formatErrorMessage(error, "Failed to save profile"),
       });
     } finally {
       setIsSaving(false);
     }
-  }, [profileUri, session.webId, createData, commitData, profileResource, locations, times, skills, requirements, causes]);
+  }, [profileUri, session.webId, createData, commitData, profileResource, locations, times, skills, requirements, causes, logout, router]);
 
   const handleLogout = async () => {
     await logout();

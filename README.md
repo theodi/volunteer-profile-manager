@@ -74,6 +74,48 @@ We stir away from hierarchical modelling, resource containment is designed to en
 Manifests resources are publicly readable resources designed for traversal needs.
 
 
+## Solid Protocol Compliance
+
+This application implements the Solid Protocol as defined in:
+- [Solid Protocol v0.11](https://solidproject.org/TR/protocol)
+- [Solid-OIDC](https://solidproject.org/TR/oidc)
+- [ACP](https://solidproject.org/TR/acp) (Access Control Policy)
+
+### Resource Structure
+
+Volunteer profile data is stored in the user's Solid Pod at:
+```
+{pod-root}/volunteer/profile
+```
+
+The profile URI is derived from the user's WebID by identifying the Pod root and appending `/volunteer/profile`.
+
+### Data Model
+
+The volunteer profile uses the following RDF vocabularies:
+
+| Vocabulary | Namespace URI | Purpose |
+|------------|---------------|---------|
+| Volunteer Profile | `https://id.volunteeringdata.io/volunteer-profile/` | Core profile properties |
+| Volunteering Schema | `https://id.volunteeringdata.io/schema/` | Skills, requirements, causes |
+| W3C Time | `http://www.w3.org/2006/time#` | Days of week |
+| WGS84 Geo | `http://www.w3.org/2003/01/geo/wgs84_pos#` | Location coordinates |
+
+### SHACL Shapes
+
+Data shapes are defined using [SHACL Compact Syntax](https://w3c.github.io/shacl/shacl-compact-syntax/) in `src/shapes/`:
+- `volunteer.shaclc` - Volunteer profile shape with locations, times, skills, requirements, and causes
+- `profile.shaclc` - WebID profile shape for reading user information
+
+These shapes define the structure and constraints for RDF data, and are used by [LDO](https://ldo.js.org/) to generate TypeScript types.
+
+### External APIs
+
+The application uses the following external services:
+- **Nominatim** (OpenStreetMap) for reverse geocoding location coordinates to addresses. Requests are rate-limited to 1 per second to comply with the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
+- **postcodes.io** for UK postcode lookups (no rate limiting required for reasonable use)
+
+
 ## Acknowledgement
 
 Thanks to imec and the SolidLab Flanders for [developing the CSS](https://solidlab.be/community-solid-server/).

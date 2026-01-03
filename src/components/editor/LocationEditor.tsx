@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { PreferredLocation, Point } from "@/ldo/volunteer.typings";
+import { reverseGeocode, searchLocation } from "@/lib/rateLimiter";
 
 // Dynamically import the map component to avoid SSR issues with Leaflet
 const LocationMap = dynamic(() => import("./LocationMap"), {
@@ -43,21 +44,12 @@ export default function LocationEditor({ locations, onChange }: LocationEditorPr
   const fetchingRef = useRef<Set<string>>(new Set());
 
   // Reverse geocode locations to get human-readable addresses
+  // Uses the rate-limited queue from rateLimiter to respect Nominatim's 1 req/sec limit
   useEffect(() => {
     const fetchAddress = async (lat: number, lng: number, key: string) => {
-      // Add delay to respect Nominatim rate limits (1 request per second)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-          {
-            headers: {
-              "User-Agent": "VolunteerProfileManager/1.0",
-            },
-          }
-        );
-        const data = await response.json();
+        // Use the rate-limited reverseGeocode function
+        const data = await reverseGeocode(lat, lng);
         
         const address = data.address || {};
         setAddresses(prev => ({
@@ -103,7 +95,7 @@ export default function LocationEditor({ locations, onChange }: LocationEditorPr
         [key]: { displayName: "Loading...", isLoading: true }
       }));
       
-      // Fetch address (don't await - let them queue up with delays)
+      // Fetch address - the rate limiter handles queueing and delays
       fetchAddress(lat, lng, key);
     }
   }, [locations]);
@@ -290,18 +282,11 @@ export default function LocationEditor({ locations, onChange }: LocationEditorPr
       }
 
       // Fallback to Nominatim for international addresses/postcodes
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(postcode)}&limit=1`,
-        {
-          headers: {
-            "User-Agent": "VolunteerProfileManager/1.0",
-          },
-        }
-      );
-      const data = await response.json();
+      // Uses the rate-limited queue to respect Nominatim's usage policy
+      const results = await searchLocation(postcode);
 
-      if (data.length > 0) {
-        const { lat, lon } = data[0];
+      if (results.length > 0) {
+        const { lat, lon } = results[0];
         handleLocationAdd(parseFloat(lat), parseFloat(lon));
         setMapCenter({ lat: parseFloat(lat), lng: parseFloat(lon) });
         setPostcodeInput("");
