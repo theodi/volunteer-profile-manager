@@ -170,13 +170,31 @@ export class RateLimiter {
 }
 
 /**
+ * Nominatim API rate limiting configuration.
+ * Based on the Nominatim usage policy:
+ * https://operations.osmfoundation.org/policies/nominatim/
+ */
+const NOMINATIM_CONFIG = {
+  /** Minimum delay between requests (1 second as per usage policy) */
+  MIN_DELAY_MS: 1000,
+  /** Maximum retry attempts for failed requests */
+  MAX_RETRIES: 2,
+  /** Initial delay before retrying a failed request */
+  RETRY_DELAY_MS: 2000,
+  /** User-Agent string identifying the application */
+  USER_AGENT: 'VolunteerProfileManager/1.0',
+  /** Nominatim API base URL */
+  BASE_URL: 'https://nominatim.openstreetmap.org',
+} as const;
+
+/**
  * Singleton rate limiter for Nominatim requests.
  * Configured for 1 request per second as per Nominatim usage policy.
  */
 export const nominatimRateLimiter = new RateLimiter({
-  minDelayMs: 1000, // 1 second between requests
-  maxRetries: 2,
-  retryDelayMs: 2000,
+  minDelayMs: NOMINATIM_CONFIG.MIN_DELAY_MS,
+  maxRetries: NOMINATIM_CONFIG.MAX_RETRIES,
+  retryDelayMs: NOMINATIM_CONFIG.RETRY_DELAY_MS,
 });
 
 /**
@@ -193,10 +211,10 @@ export async function reverseGeocode(
 ): Promise<NominatimReverseResult> {
   return nominatimRateLimiter.add(async () => {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+      `${NOMINATIM_CONFIG.BASE_URL}/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
       {
         headers: {
-          'User-Agent': 'VolunteerProfileManager/1.0',
+          'User-Agent': NOMINATIM_CONFIG.USER_AGENT,
         },
       }
     );
@@ -223,10 +241,10 @@ export async function searchLocation(
 ): Promise<NominatimSearchResult[]> {
   return nominatimRateLimiter.add(async () => {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+      `${NOMINATIM_CONFIG.BASE_URL}/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
       {
         headers: {
-          'User-Agent': 'VolunteerProfileManager/1.0',
+          'User-Agent': NOMINATIM_CONFIG.USER_AGENT,
         },
       }
     );
