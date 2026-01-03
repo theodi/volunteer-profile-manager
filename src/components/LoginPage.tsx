@@ -13,10 +13,6 @@ const PRESET_ISSUERS = [
     label: "Inrupt",
     value: "https://login.inrupt.com",
   },
-  {
-    label: "Local CSS",
-    value: "http://localhost:3000",
-  },
 ];
 
 function LoginPageContent() {
