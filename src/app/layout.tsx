@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./global.css";
+import LdoProvider from "@/components/providers/LdoProvider";
 
 /**
  * This is the default metadata of the Next.js application.
@@ -8,8 +9,8 @@ import "./global.css";
  * @see {@link https://nextjs.org/docs/app/api-reference/file-conventions/metadata}
  */
 export const metadata: Metadata = {
-    title: "Solid List Items",
-    description: "Authn browser & LDO & Next.js",
+    title: "Volunteer Profile Editor",
+    description: "Manage your volunteering preferences with Solid",
 };
 
 /**
@@ -18,10 +19,12 @@ export const metadata: Metadata = {
  * @see {@link https://nextjs.org/docs/app/api-reference/file-conventions/layout#root-layout}
  * @see {@link https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts#the-root-layout}
  */
-export default function ({ children }: LayoutProps) {
+export default function RootLayout({ children }: LayoutProps) {
     return (
         <html lang="en">
-            <body suppressHydrationWarning>{children}</body>
+            <body suppressHydrationWarning>
+                <LdoProvider>{children}</LdoProvider>
+            </body>
         </html>
     );
 }

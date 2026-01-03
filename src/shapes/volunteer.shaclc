@@ -1,17 +1,3 @@
-# Volunteer Profile SHACL Shapes (Compact Syntax)
-# Validates volunteer profile data conformant to the Volunteer Profile Ontology
-# For use with Solid applications
-#
-# Reuses standard vocabularies:
-# - W3C Time Ontology for days of the week (time:Monday, etc.)
-# - Custom vp:TimeOfDay for time of day (vp:Morning, vp:Afternoon, vp:Evening)
-#
-# Skills and Requirements from:
-# https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl
-#
-# Note: Causes are provisional placeholders. These values should be updated when
-# the official causes taxonomy is published.
-
 BASE <https://id.volunteeringdata.io/volunteer-profile/shapes/>
 
 PREFIX vp:           <https://id.volunteeringdata.io/volunteer-profile/>
@@ -21,160 +7,33 @@ PREFIX geo:          <http://www.w3.org/2003/01/geo/wgs84_pos#>
 PREFIX time:         <http://www.w3.org/2006/time#>
 PREFIX xsd:          <http://www.w3.org/2001/XMLSchema#>
 
-
-# =============================================================================
 # Volunteer Profile Shape
-# =============================================================================
 
 shape vps:VolunteerProfileShape -> vp:VolunteerProfile {
-	vp:preferredLocation @vps:PreferredLocationShape * ;
-	vp:preferredTime @vps:PreferredTimeShape * ;
-	vp:hasSkill [
-		volunteering:EmpathyAndCompassion
-		volunteering:CalmnessUnderPressure
-		volunteering:PatienceAndUnderstanding
-		volunteering:ReliabilityAndTrustworthiness
-		volunteering:RespectForProfessionalBoundaries
-		volunteering:CulturalSensitivity
-		volunteering:TraumaInformedAwareness
-		volunteering:ConflictDeescalation
-		volunteering:ClearSpokenCommunication
-		volunteering:ActiveListening
-		volunteering:AbilityToRelayAccurateInformation
-		volunteering:SupportingPeopleViaPhoneOnline
-		volunteering:UseOfRadiosAndWalkieTalkies
-		volunteering:ConfidenceEngagingWithPublicOrGroups
-		volunteering:AbilityToWorkCooperatively
-		volunteering:AbilityToWorkIndependently
-		volunteering:LeadingSmallGroupsOrTasks
-		volunteering:ManagingConflictWithinTeams
-		volunteering:SupportingOrMentoringNewVolunteers
-		volunteering:UnderstandingEmergencyBriefingsAndInstructions
-		volunteering:BasicSafeguardingKnowledge
-		volunteering:RiskAwareness
-		volunteering:SafeManualHandling
-		volunteering:IncidentReporting
-		volunteering:BasicFirstAidKnowledge
-		volunteering:FireSafetyAwareness
-		volunteering:WaterSafetyAwareness
-		volunteering:Logistics
-		volunteering:ShelterSupport
-		volunteering:BasicRecordKeeping
-		volunteering:UseOfBasicEquipment
-		volunteering:NavigationAndOrientation
-		volunteering:Driving
-		volunteering:CrowdQueueManagement
-		volunteering:PilotLicense
-		volunteering:HGVCategoryD
-		volunteering:BasicITSkills
-		volunteering:ConfidentSmartphoneUse
-		volunteering:FamiliarityWithRemoteCommunicationTools
-		volunteering:SimpleDataEntryAndReporting
-		volunteering:ResponsibleHandlingOfSocialMedia
-		volunteering:KnowledgeOfLocalRoadsFacilitiesResources
-		volunteering:UnderstandingDiverseNeedsWithinCommunity
-		volunteering:AwarenessOfLocalSupportServices
-	] * ;
-	vp:hasRequirement [
-		volunteering:PhysicalStamina
-		volunteering:AbilityToWorkOutdoors
-		volunteering:PersonalPreparedness
-		volunteering:SturdyFootwear
-		volunteering:WaterproofsAndWarmLayers
-		volunteering:Gloves
-		volunteering:HighVisibilityVest
-		volunteering:HeadtorchOrFlashlight
-		volunteering:PhoneAndPowerBank
-		volunteering:SmallPersonalFirstAidKit
-		volunteering:WaterBottle
-		volunteering:FourByFourVehicle
-		volunteering:SUVOrOffRoadVehicle
-		volunteering:VehicleWithTowCapability
-		volunteering:AccessToVanOrPeopleCarrier
-		volunteering:AbilityToTransportEquipmentOrSupplies
-		volunteering:AccessToBicyclesOrCargoBikes
-		volunteering:Boat
-		volunteering:Hovercraft
-		volunteering:WalkieTalkiesOrRadios
-		volunteering:PortableGeneratorOrPowerStation
-		volunteering:WaterPump
-		volunteering:Tools
-		volunteering:PortableShelterOrGazebo
-		volunteering:ThermalBlankets
-		volunteering:PPE
-		volunteering:MapsOrWaterproofMapCases
-		volunteering:LifeJacket
-		volunteering:Venue
-		volunteering:Kitchen
-	] * ;
-	vp:preferredCause [
-		volunteering:MentalHealth
-		volunteering:PhysicalHealth
-		volunteering:DisabilitySupport
-		volunteering:ElderCare
-		volunteering:Education
-		volunteering:YouthDevelopment
-		volunteering:Mentoring
-		volunteering:Literacy
-		volunteering:EnvironmentalConservation
-		volunteering:ClimateAction
-		volunteering:WildlifeProtection
-		volunteering:SustainableLiving
-		volunteering:Homelessness
-		volunteering:FoodSecurity
-		volunteering:CommunityDevelopment
-		volunteering:SocialInclusion
-		volunteering:RefugeeSupport
-		volunteering:ArtsAndCulture
-		volunteering:HeritagePreservation
-		volunteering:Sports
-		volunteering:DisasterRelief
-		volunteering:EmergencyResponse
-		volunteering:AnimalWelfare
-		volunteering:AnimalRescue
-		volunteering:InternationalDevelopment
-		volunteering:HumanRights
-	] * ;
+	vp:preferredLocation @vps:PreferredLocationShape .
+	vp:preferredTime @vps:PreferredTimeShape .
+	vp:hasSkill in=[volunteering:EmpathyAndCompassion volunteering:CalmnessUnderPressure volunteering:PatienceAndUnderstanding volunteering:ReliabilityAndTrustworthiness volunteering:RespectForProfessionalBoundaries volunteering:CulturalSensitivity volunteering:TraumaInformedAwareness volunteering:ConflictDeescalation volunteering:ClearSpokenCommunication volunteering:ActiveListening volunteering:AbilityToRelayAccurateInformation volunteering:SupportingPeopleViaPhoneOnline volunteering:UseOfRadiosAndWalkieTalkies volunteering:ConfidenceEngagingWithPublicOrGroups volunteering:AbilityToWorkCooperatively volunteering:AbilityToWorkIndependently volunteering:LeadingSmallGroupsOrTasks volunteering:ManagingConflictWithinTeams volunteering:SupportingOrMentoringNewVolunteers volunteering:UnderstandingEmergencyBriefingsAndInstructions volunteering:BasicSafeguardingKnowledge volunteering:RiskAwareness volunteering:SafeManualHandling volunteering:IncidentReporting volunteering:BasicFirstAidKnowledge volunteering:FireSafetyAwareness volunteering:WaterSafetyAwareness volunteering:Logistics volunteering:ShelterSupport volunteering:BasicRecordKeeping volunteering:UseOfBasicEquipment volunteering:NavigationAndOrientation volunteering:Driving volunteering:CrowdQueueManagement volunteering:PilotLicense volunteering:HGVCategoryD volunteering:BasicITSkills volunteering:ConfidentSmartphoneUse volunteering:FamiliarityWithRemoteCommunicationTools volunteering:SimpleDataEntryAndReporting volunteering:ResponsibleHandlingOfSocialMedia volunteering:KnowledgeOfLocalRoadsFacilitiesResources volunteering:UnderstandingDiverseNeedsWithinCommunity volunteering:AwarenessOfLocalSupportServices] .
+	vp:hasRequirement in=[volunteering:PhysicalStamina volunteering:AbilityToWorkOutdoors volunteering:PersonalPreparedness volunteering:SturdyFootwear volunteering:WaterproofsAndWarmLayers volunteering:Gloves volunteering:HighVisibilityVest volunteering:HeadtorchOrFlashlight volunteering:PhoneAndPowerBank volunteering:SmallPersonalFirstAidKit volunteering:WaterBottle volunteering:FourByFourVehicle volunteering:SUVOrOffRoadVehicle volunteering:VehicleWithTowCapability volunteering:AccessToVanOrPeopleCarrier volunteering:AbilityToTransportEquipmentOrSupplies volunteering:AccessToBicyclesOrCargoBikes volunteering:Boat volunteering:Hovercraft volunteering:WalkieTalkiesOrRadios volunteering:PortableGeneratorOrPowerStation volunteering:WaterPump volunteering:Tools volunteering:PortableShelterOrGazebo volunteering:ThermalBlankets volunteering:PPE volunteering:MapsOrWaterproofMapCases volunteering:LifeJacket volunteering:Venue volunteering:Kitchen] .
+	vp:preferredCause in=[volunteering:MentalHealth volunteering:PhysicalHealth volunteering:DisabilitySupport volunteering:ElderCare volunteering:Education volunteering:YouthDevelopment volunteering:Mentoring volunteering:Literacy volunteering:EnvironmentalConservation volunteering:ClimateAction volunteering:WildlifeProtection volunteering:SustainableLiving volunteering:Homelessness volunteering:FoodSecurity volunteering:CommunityDevelopment volunteering:SocialInclusion volunteering:RefugeeSupport volunteering:ArtsAndCulture volunteering:HeritagePreservation volunteering:Sports volunteering:DisasterRelief volunteering:EmergencyResponse volunteering:AnimalWelfare volunteering:AnimalRescue volunteering:InternationalDevelopment volunteering:HumanRights] .
 }
 
-
-# =============================================================================
 # Preferred Location Shape
-# =============================================================================
 
 shape vps:PreferredLocationShape -> vp:PreferredLocation {
-	vp:point @vps:PointShape [1..1] ;
-	vp:rad xsd:decimal MinExclusive=0 [1..1] ;
+	vp:point @vps:PointShape [1..1] .
+	vp:rad xsd:decimal MinExclusive=0 [1..1] .
 }
 
-
-# =============================================================================
 # Point Shape
-# =============================================================================
 
 shape vps:PointShape -> vp:Point {
-	geo:lat xsd:decimal MinInclusive=-90 MaxInclusive=90 [1..1] ;
-	geo:long xsd:decimal MinInclusive=-180 MaxInclusive=180 [1..1] ;
+	geo:lat xsd:decimal MinInclusive=-90 MaxInclusive=90 [1..1] .
+	geo:long xsd:decimal MinInclusive=-180 MaxInclusive=180 [1..1] .
 }
 
-
-# =============================================================================
 # Preferred Time Shape
-# =============================================================================
 
 shape vps:PreferredTimeShape -> vp:PreferredTime {
-	vp:day [
-		time:Monday
-		time:Tuesday
-		time:Wednesday
-		time:Thursday
-		time:Friday
-		time:Saturday
-		time:Sunday
-	] [1..1] ;
-	vp:time [
-		vp:Morning
-		vp:Afternoon
-		vp:Evening
-	] [1..1] ;
+	vp:day in=[time:Monday time:Tuesday time:Wednesday time:Thursday time:Friday time:Saturday time:Sunday] [1..1] .
+	vp:time in=[vp:Morning vp:Afternoon vp:Evening] [1..1] .
 }

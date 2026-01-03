@@ -1,0 +1,27 @@
+# WebID Profile SHACL Shapes (Compact Syntax)
+# Validates basic WebID profile data using FOAF and vCard vocabularies
+
+BASE <https://id.volunteeringdata.io/volunteer-profile/shapes/>
+
+PREFIX vps:   <https://id.volunteeringdata.io/volunteer-profile/shapes/>
+PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
+PREFIX vcard: <http://www.w3.org/2006/vcard/ns#>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
+
+
+# =============================================================================
+# WebID Profile Shape
+# =============================================================================
+
+shape vps:WebIdProfileShape -> foaf:Person {
+	# Name fields
+	foaf:name xsd:string [0..1] .
+	vcard:fn xsd:string [0..1] .
+	foaf:givenName xsd:string [0..1] .
+	foaf:familyName xsd:string [0..1] .
+	
+	# Image/photo fields
+	foaf:img IRI [0..1] .
+	foaf:depiction IRI [0..1] .
+	vcard:hasPhoto IRI [0..1] .
+}

@@ -13,27 +13,35 @@
         "start:next": "next dev --turbopack"
     },
     "dependencies": {
-        "@inrupt/solid-client-authn-browser": "^3.1.0",
         "@inrupt/solid-client": "2.1.2",
+        "@inrupt/solid-client-authn-browser": "^3.1.0",
         "@ldo/ldo": "^1.0.0-alpha.32",
+        "@ldo/solid-react": "^1.0.0-alpha.33",
+        "leaflet": "^1.9.4",
         "next": "15.5.4",
         "react": "19.1.0",
-        "react-dom": "19.1.0"
+        "react-dom": "19.1.0",
+        "react-leaflet": "^5.0.0"
     },
     "devDependencies": {
         "@comunica/query-sparql": "^4.0.0",
         "@ldo/cli": "^1.0.0-alpha.32",
         "@solid/community-server": "^8.0.0-alpha.1",
+        "@tailwindcss/postcss": "^4.1.18",
         "@types/jsonld": "^1",
+        "@types/leaflet": "^1.9.21",
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/shexj": "^2",
+        "autoprefixer": "^10.4.23",
         "concurrently": "^9",
         "n3": "^1.22.3",
         "nodemon": "^3",
+        "postcss": "^8.5.6",
         "rdf-dereference-store": "^1.4.0",
         "shaclc-write": "^1.5.0",
+        "tailwindcss": "^4.1.18",
         "typescript": "^5"
     }
 }
