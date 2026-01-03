@@ -148,7 +148,7 @@ export default function LocationMap({
   }, [locations, selectedIndex, isMapReady, onSelectLocation]);
 
   return (
-    <div className="relative">
+    <div className="relative isolate">
       <div
         ref={mapRef}
         className="w-full h-80 rounded-lg border border-gray-200 z-0"
