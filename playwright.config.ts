@@ -18,7 +18,11 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   
-  /* Opt out of parallel tests on CI. */
+  /* 
+   * Run tests sequentially in CI to avoid potential race conditions
+   * with shared CSS server state and authentication flows.
+   * Tests can run in parallel locally where the environment is more controlled.
+   */
   workers: process.env.CI ? 1 : undefined,
   
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -50,13 +54,13 @@ export default defineConfig({
       command: 'npm run start:css',
       url: 'http://localhost:3001',
       reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
+      timeout: 60 * 1000,
     },
     {
       command: 'npm run start:next',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
+      timeout: 60 * 1000,
     },
   ],
 });

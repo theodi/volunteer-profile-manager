@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { LOCAL_CSS_ISSUER, PAGE_TRANSITION_TIMEOUT } from './helpers/constants';
 
 /**
  * Smoke tests to verify basic application functionality
@@ -21,24 +22,20 @@ test.describe('Smoke Tests', () => {
   });
 
   test('should have correct page title', async ({ page }) => {
-    await page.goto('/login');
+    await page.goto('/login', { waitUntil: 'networkidle' });
     
-    // Wait for page to load
-    await page.waitForTimeout(1000);
-    
-    // The title should be set by Next.js
+    // The title should be set by Next.js (Playwright will auto-wait)
     await expect(page).toHaveTitle(/volunteer profile/i);
   });
 
   test('should redirect to login when not authenticated', async ({ page }) => {
     await page.goto('/');
     
-    // Wait for redirect
-    await page.waitForTimeout(2000);
+    // Wait for redirect to login page using deterministic URL wait
+    await page.waitForURL(/\/login(?:\?|$)/, { timeout: 5000 });
     
     // Should be on login page
-    const url = page.url();
-    expect(url).toContain('/login');
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test('should have all preset issuer buttons', async ({ page }) => {
@@ -56,16 +53,16 @@ test.describe('Smoke Tests', () => {
     // Click the Local CSS preset
     await page.click('button:has-text("Local CSS")');
     
-    // Verify the input was populated
+    // Verify the input was populated with the local CSS issuer
     const issuerInput = page.locator('#oidc-issuer');
-    await expect(issuerInput).toHaveValue('http://localhost:3000');
+    await expect(issuerInput).toHaveValue(LOCAL_CSS_ISSUER);
   });
 
   test('should enable Next button when issuer is set', async ({ page }) => {
     await page.goto('/login');
     
-    // Initially, fill in a valid URL
-    await page.fill('#oidc-issuer', 'http://localhost:3000');
+    // Fill in a valid local CSS URL
+    await page.fill('#oidc-issuer', LOCAL_CSS_ISSUER);
     
     // The Next button should be enabled (not disabled)
     const nextButton = page.getByRole('button', { name: /next/i });

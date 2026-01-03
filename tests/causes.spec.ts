@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginToLocalCSS, logout } from './helpers/auth';
+import { SAVE_OPERATION_TIMEOUT } from './helpers/constants';
 
 /**
  * Test suite for Causes Editor
@@ -17,7 +18,7 @@ test.describe('Causes Editor', () => {
     await page.getByRole('tab', { name: /causes/i }).click();
     
     // Wait for the causes editor to load
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Step 3: Select a cause - "Mental Health"
     const mentalHealthCheckbox = page.getByLabel(/mental health/i);
@@ -33,7 +34,9 @@ test.describe('Causes Editor', () => {
     await page.getByRole('button', { name: /save/i }).click();
     
     // Wait for save confirmation
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+      timeout: SAVE_OPERATION_TIMEOUT 
+    });
     
     // Step 6: Logout
     await logout(page);
@@ -43,7 +46,7 @@ test.describe('Causes Editor', () => {
     
     // Step 8: Navigate back to Causes tab
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Step 9: Verify causes are still selected
     const mentalHealthCheckboxAfter = page.getByLabel(/mental health/i);
@@ -58,7 +61,7 @@ test.describe('Causes Editor', () => {
     
     // Navigate to Causes tab
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Select causes from different categories
     const educationCheckbox = page.getByLabel(/^education$/i);
@@ -71,7 +74,9 @@ test.describe('Causes Editor', () => {
     
     // Save
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+      timeout: SAVE_OPERATION_TIMEOUT 
+    });
     
     // Verify selections persist
     await expect(educationCheckbox).toBeChecked();
@@ -84,7 +89,7 @@ test.describe('Causes Editor', () => {
     
     // Navigate to Causes tab
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // First, add "Disaster Relief" if not already added
     const disasterCheckbox = page.getByLabel(/disaster relief/i);
@@ -93,8 +98,10 @@ test.describe('Causes Editor', () => {
     if (!isChecked) {
       await disasterCheckbox.check();
       await page.getByRole('button', { name: /save/i }).click();
-      await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
-      await page.waitForTimeout(1000);
+      await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+        timeout: SAVE_OPERATION_TIMEOUT 
+      });
+      await page.waitForLoadState('networkidle');
     }
     
     // Now deselect it
@@ -103,7 +110,9 @@ test.describe('Causes Editor', () => {
     
     // Save
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+      timeout: SAVE_OPERATION_TIMEOUT 
+    });
     
     // Logout and login
     await logout(page);
@@ -111,7 +120,7 @@ test.describe('Causes Editor', () => {
     
     // Verify cause is not selected
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     const disasterCheckboxAfter = page.getByLabel(/disaster relief/i);
     await expect(disasterCheckboxAfter).not.toBeChecked();
@@ -122,7 +131,7 @@ test.describe('Causes Editor', () => {
     
     // Navigate to Causes tab
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Select multiple causes
     const youthCheckbox = page.getByLabel(/youth development/i);
@@ -139,7 +148,9 @@ test.describe('Causes Editor', () => {
     
     // Save all at once
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+      timeout: SAVE_OPERATION_TIMEOUT 
+    });
     
     // Verify all selections
     await expect(youthCheckbox).toBeChecked();

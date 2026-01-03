@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginToLocalCSS, logout } from './helpers/auth';
+import { SAVE_OPERATION_TIMEOUT, EDITOR_LOAD_TIMEOUT } from './helpers/constants';
 
 /**
  * Test suite for Location Editor
@@ -20,20 +21,20 @@ test.describe('Location Editor', () => {
     // Click to ensure we're on the tab
     await locationTab.click();
     
-    // Wait for the location editor to load (should show map or location controls)
-    await page.waitForTimeout(2000);
+    // Wait for the location editor to load
+    await page.waitForLoadState('networkidle');
     
     // Verify we can see location-related elements
     // The location editor should have either a map or location input controls
-    const hasMapOrInput = await Promise.race([
-      page.waitForSelector('text=Loading map', { timeout: 5000 }).then(() => true),
-      page.waitForSelector('[class*="leaflet"]', { timeout: 5000 }).then(() => true),
-      page.waitForSelector('input[placeholder*="postcode" i]', { timeout: 5000 }).then(() => true),
-      page.waitForSelector('button:has-text("Use Current Location")', { timeout: 5000 }).then(() => true),
-    ].map(p => p.catch(() => false)));
+    const hasLocationEditor = await Promise.race([
+      page.waitForSelector('text=Loading map', { timeout: 5000 }).then(() => true).catch(() => false),
+      page.waitForSelector('[class*="leaflet"]', { timeout: 5000 }).then(() => true).catch(() => false),
+      page.waitForSelector('input[placeholder*="postcode" i]', { timeout: 5000 }).then(() => true).catch(() => false),
+      page.waitForSelector('button:has-text("Use Current Location")', { timeout: 5000 }).then(() => true).catch(() => false),
+    ]);
     
     // At least one of these elements should be present
-    expect(hasMapOrInput).toBeTruthy();
+    expect(hasLocationEditor).toBeTruthy();
   });
 
   test('should allow searching for location by postcode', async ({ page }) => {
@@ -41,7 +42,7 @@ test.describe('Location Editor', () => {
     
     // Navigate to Location tab
     await page.getByRole('tab', { name: /location/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Try to find postcode input
     const postcodeInput = page.locator('input[placeholder*="postcode" i], input[type="text"]').first();
@@ -59,7 +60,7 @@ test.describe('Location Editor', () => {
         await searchButton.click();
         
         // Wait for search results or map update
-        await page.waitForTimeout(2000);
+        await page.waitForLoadState('networkidle');
       }
     }
   });
@@ -69,7 +70,7 @@ test.describe('Location Editor', () => {
     
     // Navigate to Location tab
     await page.getByRole('tab', { name: /location/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Try to use current location or add a location
     const useLocationButton = page.locator('button:has-text("Use Current Location"), button:has-text("Get Location")').first();
@@ -83,12 +84,14 @@ test.describe('Location Editor', () => {
       
       await useLocationButton.click();
       
-      // Wait for location to be processed
-      await page.waitForTimeout(3000);
+      // Wait for location to be processed by watching for network idle
+      await page.waitForLoadState('networkidle');
       
       // Save the profile
       await page.getByRole('button', { name: /save/i }).click();
-      await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+        timeout: SAVE_OPERATION_TIMEOUT 
+      });
       
       // Logout and login
       await logout(page);
@@ -96,18 +99,21 @@ test.describe('Location Editor', () => {
       
       // Navigate back to Location tab
       await page.getByRole('tab', { name: /location/i }).click();
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState('networkidle');
       
-      // The location should be preserved - check for any location markers or data
-      // This is a basic check that the location editor loads with the data
-      const hasLocationData = await Promise.race([
-        page.waitForSelector('[class*="marker"]', { timeout: 5000 }).then(() => true),
-        page.waitForSelector('text=/51.*-0.12/i', { timeout: 5000 }).then(() => true),
-        page.waitForTimeout(5000).then(() => false),
+      // The location should be preserved - try to find location markers or coordinate data
+      // Check for various indicators that location data is present
+      const locationIndicators = await Promise.all([
+        page.locator('[class*="marker"]').count(),
+        page.locator('text=/51.*-0.12/i').count(),
+        page.locator('[class*="leaflet-marker"]').count(),
       ]);
       
-      // Note: Location persistence is hard to test without seeing the actual UI structure
-      // This test verifies the basic flow works
+      const hasLocationData = locationIndicators.some(count => count > 0);
+      
+      // Note: Location persistence verification is limited without detailed UI structure knowledge
+      // This test verifies the basic save/load flow works
+      // Actual coordinate verification would require inspecting the Solid Pod data
     }
   });
 });

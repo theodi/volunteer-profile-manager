@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginToLocalCSS, logout } from './helpers/auth';
+import { SAVE_OPERATION_TIMEOUT } from './helpers/constants';
 
 /**
  * Integration test suite for Profile Editor
@@ -24,7 +25,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Step 4: Set availability
     await page.getByRole('tab', { name: /availability/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const fridayCheckbox = page.locator('input[type="checkbox"][value*="Friday"]').first();
     await fridayCheckbox.check();
@@ -34,7 +35,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Step 5: Add skills
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const teamworkCheckbox = page.getByLabel(/ability.*work cooperatively/i);
     await teamworkCheckbox.check();
@@ -44,7 +45,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Step 6: Add causes
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const communityCheckbox = page.getByLabel(/community development/i);
     await communityCheckbox.check();
@@ -66,7 +67,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Check availability
     await page.getByRole('tab', { name: /availability/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const fridayCheckboxAfter = page.locator('input[type="checkbox"][value*="Friday"]').first();
     await expect(fridayCheckboxAfter).toBeChecked();
@@ -76,7 +77,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Check skills
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const teamworkCheckboxAfter = page.getByLabel(/ability.*work cooperatively/i);
     await expect(teamworkCheckboxAfter).toBeChecked();
@@ -86,7 +87,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Check causes
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const communityCheckboxAfter = page.getByLabel(/community development/i);
     await expect(communityCheckboxAfter).toBeChecked();
@@ -110,7 +111,7 @@ test.describe('Profile Editor Integration', () => {
       await profileButton.click();
       
       // Wait for dropdown menu
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Look for logout option in the menu
       const logoutOption = page.locator('button:has-text("Sign out"), button:has-text("Logout")').first();
@@ -131,7 +132,7 @@ test.describe('Profile Editor Integration', () => {
     
     for (const tabName of tabs) {
       await page.getByRole('tab', { name: tabName }).click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Verify tab is selected/active
       const tab = page.getByRole('tab', { name: tabName });
@@ -152,7 +153,7 @@ test.describe('Profile Editor Integration', () => {
     
     for (const tabName of tabs) {
       await page.getByRole('tab', { name: tabName }).click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Verify save button is present
       const saveButton = page.getByRole('button', { name: /save/i });
@@ -165,7 +166,7 @@ test.describe('Profile Editor Integration', () => {
     
     // First update - add availability
     await page.getByRole('tab', { name: /availability/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const saturdayCheckbox = page.locator('input[type="checkbox"][value*="Saturday"]').first();
     await saturdayCheckbox.check();
@@ -175,7 +176,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Second update - add a skill
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const firstAidCheckbox = page.getByLabel(/basic first aid/i);
     await firstAidCheckbox.check();
@@ -185,7 +186,7 @@ test.describe('Profile Editor Integration', () => {
     
     // Third update - add a cause
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const emergencyCheckbox = page.getByLabel(/emergency response/i);
     await emergencyCheckbox.check();
@@ -195,15 +196,15 @@ test.describe('Profile Editor Integration', () => {
     
     // Verify all updates persisted
     await page.getByRole('tab', { name: /availability/i }).click();
-    await page.waitForTimeout(500);
+    await page.waitForLoadState('networkidle');
     await expect(saturdayCheckbox).toBeChecked();
     
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(500);
+    await page.waitForLoadState('networkidle');
     await expect(firstAidCheckbox).toBeChecked();
     
     await page.getByRole('tab', { name: /causes/i }).click();
-    await page.waitForTimeout(500);
+    await page.waitForLoadState('networkidle');
     await expect(emergencyCheckbox).toBeChecked();
   });
 });

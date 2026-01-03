@@ -38,7 +38,9 @@ jobs:
         
     - name: Build LDO types
       run: npm run build:ldo
-      continue-on-error: true
+      # Note: LDO build may fail in CI due to network restrictions when fetching remote contexts.
+      # The generated types should already be committed to the repository.
+      # If this step fails but types exist in src/ldo/, tests can still run.
       
     - name: Run Playwright tests
       run: npm run test:e2e

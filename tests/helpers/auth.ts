@@ -1,30 +1,39 @@
 import { Page, expect } from '@playwright/test';
+import { 
+  TEST_CREDENTIALS, 
+  LOCAL_CSS_ISSUER, 
+  AUTH_FLOW_TIMEOUT,
+  CSS_LOGIN_TIMEOUT,
+  OAUTH_REDIRECT_TIMEOUT 
+} from './constants';
 
 /**
  * Login to local Community Solid Server (CSS)
  * 
  * This function handles the OAuth flow for authentication against
- * the local CSS instance running on http://localhost:3001
+ * the local CSS instance. The Next.js app (port 3000) acts as the OIDC
+ * issuer, which then communicates with CSS (port 3001).
+ * 
+ * Note: Test account (test@example.com / test123) must exist in the local CSS.
+ * Create it by navigating to http://localhost:3001/idp/register/ if needed.
  * 
  * @param page - Playwright page object
- * @param email - Email for CSS login (default: test@example.com)
- * @param password - Password for CSS login (default: test123)
+ * @param email - Email for CSS login
+ * @param password - Password for CSS login
  */
 export async function loginToLocalCSS(
   page: Page,
-  email: string = 'test@example.com',
-  password: string = 'test123'
+  email: string = TEST_CREDENTIALS.email,
+  password: string = TEST_CREDENTIALS.password
 ) {
-  // Navigate to the app
+  // Navigate to the app and wait for initial load
   await page.goto('/', { waitUntil: 'networkidle' });
   
-  // Wait a bit for redirect to happen if needed
-  await page.waitForTimeout(1000);
-  
-  // Check if we're on the login page
-  const currentUrl = page.url();
-  if (!currentUrl.includes('/login')) {
-    // Already logged in, check for logout button to verify
+  // Wait for either login page or profile page to appear
+  try {
+    await page.waitForURL(/\/(login)?$/, { timeout: 5000 });
+  } catch {
+    // Already might be logged in, check for logout button
     const logoutButton = page.getByRole('button', { name: /logout/i });
     const isVisible = await logoutButton.isVisible().catch(() => false);
     if (isVisible) {
@@ -33,57 +42,61 @@ export async function loginToLocalCSS(
   }
   
   // Navigate to login page if not already there
+  const currentUrl = page.url();
   if (!currentUrl.includes('/login')) {
-    await page.goto('/login');
+    await page.goto('/login', { waitUntil: 'networkidle' });
   }
   
-  // Wait for the OIDC issuer input
-  await page.waitForSelector('#oidc-issuer', { timeout: 10000 });
+  // Wait for the OIDC issuer input to be ready
+  await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: OAUTH_REDIRECT_TIMEOUT });
   
   // Select "Local CSS" preset button
   await page.click('button:has-text("Local CSS")');
   
-  // Verify the input has the correct value
+  // Verify the input has the correct value (Next.js app acts as OIDC proxy)
   const issuerInput = page.locator('#oidc-issuer');
-  await expect(issuerInput).toHaveValue('http://localhost:3000');
+  await expect(issuerInput).toHaveValue(LOCAL_CSS_ISSUER);
   
   // Click the "Next" button to initiate OAuth flow
   await page.click('button[type="submit"]:has-text("Next")');
   
   // Wait for redirect to CSS login/authorize page
-  // CSS may redirect directly to authorize if already logged in
-  await page.waitForURL(/localhost:3001/, { timeout: 15000 });
+  await page.waitForURL(/localhost:3001/, { timeout: CSS_LOGIN_TIMEOUT });
   
-  // Handle different CSS auth flows
-  const pageContent = await page.content();
+  // Wait for page to stabilize and check for login form
+  await page.waitForLoadState('networkidle');
   
-  if (pageContent.includes('email') && pageContent.includes('password')) {
+  // Check if login form is present
+  const emailInput = page.locator('input[name="email"]');
+  const isLoginFormVisible = await emailInput.isVisible().catch(() => false);
+  
+  if (isLoginFormVisible) {
     // Need to log in to CSS
-    await page.fill('input[name="email"]', email);
+    await emailInput.fill(email);
     await page.fill('input[name="password"]', password);
     await page.click('button[type="submit"]');
     
-    // May need to wait for authorize page after login
-    await page.waitForTimeout(2000);
+    // Wait for either authorize page or redirect back to app
+    await page.waitForLoadState('networkidle');
   }
   
   // Check if there's an authorize/consent page
-  const currentPageContent = await page.content();
-  if (currentPageContent.includes('Authorize') || currentPageContent.includes('consent')) {
-    // Click authorize/allow button
-    const authorizeButton = page.locator('button:has-text("Authorize"), button:has-text("Allow"), button[type="submit"]').first();
+  const authorizeButton = page.locator('button:has-text("Authorize"), button:has-text("Allow")').first();
+  const isAuthorizeVisible = await authorizeButton.isVisible().catch(() => false);
+  
+  if (isAuthorizeVisible) {
     await authorizeButton.click();
   }
   
   // Wait for redirect back to the app
-  await page.waitForURL('http://localhost:3000/', { timeout: 15000 });
+  await page.waitForURL('http://localhost:3000/', { timeout: AUTH_FLOW_TIMEOUT });
   
-  // Wait for authentication to complete
-  await page.waitForTimeout(2000);
+  // Wait for authentication to complete by checking for profile page elements
+  await page.waitForLoadState('networkidle');
   
-  // Verify logged in by checking for logout button or profile content
+  // Verify logged in by checking for logout button
   const logoutButton = page.getByRole('button', { name: /logout/i });
-  await expect(logoutButton).toBeVisible({ timeout: 10000 });
+  await expect(logoutButton).toBeVisible({ timeout: OAUTH_REDIRECT_TIMEOUT });
 }
 
 /**
@@ -98,39 +111,9 @@ export async function logout(page: Page) {
   const logoutButton = page.getByRole('button', { name: /logout/i });
   await logoutButton.click();
   
-  // Wait for redirect to login page
-  await page.waitForURL(/login/, { timeout: 10000 });
+  // Wait for redirect to login page using deterministic URL wait
+  await page.waitForURL(/\/login(?:\?|$)/, { timeout: OAUTH_REDIRECT_TIMEOUT });
   
-  // Verify we're on login page
-  const loginButton = page.getByRole('button', { name: /login/i });
-  await expect(loginButton).toBeVisible();
-}
-
-/**
- * Create a new test account on local CSS
- * 
- * This registers a new account if it doesn't exist
- * 
- * @param page - Playwright page object
- * @param email - Email for new account
- * @param password - Password for new account
- */
-export async function createCSSAccount(
-  page: Page,
-  email: string,
-  password: string
-) {
-  // Navigate to CSS registration page
-  await page.goto('http://localhost:3001/idp/register/');
-  
-  // Fill in registration form
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="password"]', password);
-  await page.fill('input[name="confirmPassword"]', password);
-  
-  // Submit registration
-  await page.click('button[type="submit"]');
-  
-  // Wait for success or error
-  await page.waitForTimeout(2000);
+  // Verify we're on login page by waiting for the issuer input
+  await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: 5000 });
 }

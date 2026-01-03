@@ -10,6 +10,20 @@ Before running tests, ensure you have:
 2. Dependencies installed: `npm install`
 3. Playwright browsers installed: `npx playwright install chromium`
 4. Environment variables set up (copy `.env.example` to `.env`)
+5. **Test account created** in local CSS (see [Test Account Setup](#test-account-setup) below)
+
+### Test Account Setup
+
+Tests use a default test account with the following credentials:
+- **Email**: `test@example.com`
+- **Password**: `test123`
+
+**Important**: You must create this account before running tests:
+
+1. Ensure the CSS server is running: `npm run start:css`
+2. Navigate to http://localhost:3001/idp/register/
+3. Create an account with the credentials above
+4. Alternatively, update the credentials in `tests/helpers/constants.ts` to match an existing account
 
 ## Running Tests
 

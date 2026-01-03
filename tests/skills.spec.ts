@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginToLocalCSS, logout } from './helpers/auth';
+import { SAVE_OPERATION_TIMEOUT } from './helpers/constants';
 
 /**
  * Test suite for Skills & Requirements Editor
@@ -17,7 +18,7 @@ test.describe('Skills & Requirements Editor', () => {
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
     
     // Wait for the skills editor to load
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Step 3: Add a skill - "Empathy and Compassion"
     const empathyCheckbox = page.getByLabel(/empathy.*compassion/i);
@@ -33,7 +34,7 @@ test.describe('Skills & Requirements Editor', () => {
     await page.getByRole('button', { name: /save/i }).click();
     
     // Wait for save confirmation
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
     
     // Step 6: Logout
     await logout(page);
@@ -43,7 +44,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Step 8: Navigate back to Skills & Requirements tab
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Step 9: Verify skills are still selected
     const empathyCheckboxAfter = page.getByLabel(/empathy.*compassion/i);
@@ -58,7 +59,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Navigate to Skills & Requirements tab
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Add a requirement - "Physical Stamina"
     const staminaCheckbox = page.getByLabel(/physical stamina/i);
@@ -72,7 +73,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Save
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
     
     // Verify selections persist on the same page
     await expect(staminaCheckbox).toBeChecked();
@@ -84,7 +85,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Navigate to Skills & Requirements tab
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // First, add "Calmness Under Pressure" if not already added
     const calmnessCheckbox = page.getByLabel(/calmness.*pressure/i);
@@ -93,8 +94,8 @@ test.describe('Skills & Requirements Editor', () => {
     if (!isChecked) {
       await calmnessCheckbox.check();
       await page.getByRole('button', { name: /save/i }).click();
-      await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
-      await page.waitForTimeout(1000);
+      await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
+      await page.waitForLoadState('networkidle');
     }
     
     // Now remove it
@@ -103,7 +104,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Save
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
     
     // Logout and login
     await logout(page);
@@ -111,7 +112,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Verify skill is not selected
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     const calmnessCheckboxAfter = page.getByLabel(/calmness.*pressure/i);
     await expect(calmnessCheckboxAfter).not.toBeChecked();
@@ -122,7 +123,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Navigate to Skills & Requirements tab
     await page.getByRole('tab', { name: /skills.*requirements/i }).click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Add multiple skills
     const patienceCheckbox = page.getByLabel(/patience.*understanding/i);
@@ -142,7 +143,7 @@ test.describe('Skills & Requirements Editor', () => {
     
     // Save all at once
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
     
     // Verify all selections
     await expect(patienceCheckbox).toBeChecked();
