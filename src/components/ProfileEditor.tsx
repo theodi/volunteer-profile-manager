@@ -206,13 +206,23 @@ export default function ProfileEditor() {
         setLocations(locs as PreferredLocation[]);
       }
 
-      // Extract times
+      // Extract times - explicitly extract @id values to ensure plain objects work correctly
       if (profile.preferredTime) {
-        const tms = Array.from(profile.preferredTime).map((t) => ({
-          day: t.day,
-          time: t.time,
-        }));
-        setTimes(tms as PreferredTime[]);
+        const tms = Array.from(profile.preferredTime)
+          .map((t) => {
+            const dayId = t.day?.["@id"];
+            const timeId = t.time?.["@id"];
+            // Only include entries with both day and time @id values
+            if (dayId && timeId) {
+              return {
+                day: { "@id": dayId },
+                time: { "@id": timeId },
+              };
+            }
+            return null;
+          })
+          .filter((t): t is PreferredTime => t !== null);
+        setTimes(tms);
       }
 
       // Extract skills
