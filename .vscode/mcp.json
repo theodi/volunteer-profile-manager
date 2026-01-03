@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "ols-mcp-server": {
+      "command": "uv",
+      "args": ["tool", "run", "ols-mcp-server"],
+      "env": {}
+    }
+  }
+}

@@ -1,6 +1,0 @@
-preferredLocation: Longitude, Latitude, Radius
-preferredTime: DayOfWeek, (Morning, Afternoon, Evening)
-hasSkill: [range is CrisisresponseSkill as defined in https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl]
-hasRequirement: [range is CrisisresponseRequirement as defined in https://github.com/volunteeringdata/volunteering-data-model/blob/main/hackathon/crisis-response-and-spontaneous-volunteering/crisis.ttl]
-preferredCause: [range is :Cause as defined in https://raw.githubusercontent.com/volunteeringdata/volunteering-data-model/refs/heads/main/vocabulary.ttl]
-
