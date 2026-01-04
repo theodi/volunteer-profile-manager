@@ -16,10 +16,11 @@ export async function GET(request: NextRequest) {
   const clientIdDocument = {
     "@context": "https://www.w3.org/ns/solid/oidc-context.jsonld",
     "client_id": `${origin}/api/client-id`,
-    "redirect_uris": [`${origin}/`],
+    "redirect_uris": [`${origin}/login`],
     "post_logout_redirect_uris": [`${origin}/`],
     "client_name": "Volunteer Profile Editor",
     "client_uri": origin,
+    "logo_uri": `${origin}/icon.svg`,
     "scope": "openid webid offline_access",
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code"],

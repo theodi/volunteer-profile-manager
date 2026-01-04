@@ -32,6 +32,7 @@ interface LocationEditorProps {
   locations: PreferredLocation[];
   onChange: (locations: PreferredLocation[]) => void;
   homeAddress?: HomeAddress;
+  isLoading?: boolean;
 }
 
 interface LocationAddress {
@@ -43,7 +44,7 @@ interface LocationAddress {
   isLoading: boolean;
 }
 
-export default function LocationEditor({ locations, onChange, homeAddress }: LocationEditorProps) {
+export default function LocationEditor({ locations, onChange, homeAddress, isLoading = false }: LocationEditorProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -137,6 +138,8 @@ export default function LocationEditor({ locations, onChange, homeAddress }: Loc
 
   // Initialize map center based on existing locations or request geolocation if none
   useEffect(() => {
+    // Don't initialize until loading is complete to avoid premature geolocation request
+    if (isLoading) return;
     if (hasInitialized) return;
     setHasInitialized(true);
 
@@ -187,7 +190,7 @@ export default function LocationEditor({ locations, onChange, homeAddress }: Loc
         maximumAge: 300000,
       }
     );
-  }, [hasInitialized, locations, onChange]);
+  }, [isLoading, hasInitialized, locations, onChange]);
 
   // Convert locations for map
   const mapLocations = useMemo(
