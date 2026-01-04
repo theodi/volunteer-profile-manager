@@ -185,6 +185,12 @@ export async function loginToLocalCSS(
       // Retry login flow
       await initiateOAuthFlow(page);
       await performCSSLogin(page, email, password);
+
+      // After retrying login, verify that it succeeded before proceeding
+      const hasRetryError = await hasLoginError(page);
+      if (hasRetryError) {
+        throw new Error('Login failed even after automatic test account registration. Check test credentials or CSS configuration.');
+      }
     }
   }
   
