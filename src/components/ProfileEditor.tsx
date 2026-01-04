@@ -196,8 +196,7 @@ export default function ProfileEditor() {
   const isProfileLoading = !profileResource || 
     (profileResource.status.type !== "dataReadSuccess" && 
      profileResource.status.type !== "containerReadSuccess" &&
-     profileResource.status.type !== "absentReadSuccess" &&
-     profileResource.status.type !== "serverError");
+     profileResource.status.type !== "absentReadSuccess");
 
   // Initialize local state from profile when loaded
   useEffect(() => {
