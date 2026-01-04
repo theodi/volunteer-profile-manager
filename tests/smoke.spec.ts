@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { LOCAL_CSS_ISSUER, PAGE_TRANSITION_TIMEOUT } from './helpers/constants';
+import { LOCAL_CSS_ISSUER } from './helpers/constants';
 
 /**
  * Smoke tests to verify basic application functionality
@@ -17,8 +17,8 @@ test.describe('Smoke Tests', () => {
     // Verify the OIDC issuer input exists
     await expect(page.locator('#oidc-issuer')).toBeVisible();
     
-    // Verify preset provider buttons exist
-    await expect(page.getByRole('button', { name: /local css/i })).toBeVisible();
+    // Verify preset provider buttons exist (Local CSS was removed)
+    await expect(page.getByRole('button', { name: /solid community/i })).toBeVisible();
   });
 
   test('should have correct page title', async ({ page }) => {
@@ -41,21 +41,20 @@ test.describe('Smoke Tests', () => {
   test('should have all preset issuer buttons', async ({ page }) => {
     await page.goto('/login');
     
-    // Verify all preset issuers are available
+    // Verify preset issuers are available (Local CSS was removed in PR #10)
     await expect(page.getByRole('button', { name: /solid community/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /inrupt/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /local css/i })).toBeVisible();
   });
 
   test('should allow selecting a preset issuer', async ({ page }) => {
     await page.goto('/login');
     
-    // Click the Local CSS preset
-    await page.click('button:has-text("Local CSS")');
+    // Click the Solid Community preset
+    await page.click('button:has-text("Solid Community")');
     
-    // Verify the input was populated with the local CSS issuer
+    // Verify the input was populated with the Solid Community issuer
     const issuerInput = page.locator('#oidc-issuer');
-    await expect(issuerInput).toHaveValue(LOCAL_CSS_ISSUER);
+    await expect(issuerInput).toHaveValue('https://solidcommunity.net/');
   });
 
   test('should enable Next button when issuer is set', async ({ page }) => {
