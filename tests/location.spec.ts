@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginToLocalCSS, logout } from './helpers/auth';
-import { SAVE_OPERATION_TIMEOUT } from './helpers/constants';
+import { SAVE_OPERATION_TIMEOUT, EDITOR_LOAD_TIMEOUT } from './helpers/constants';
 
 /**
  * Test suite for Location Editor
@@ -23,7 +23,7 @@ test.describe('Location Editor', () => {
     await page.waitForLoadState('networkidle');
     
     // Wait for map or editor to load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(EDITOR_LOAD_TIMEOUT);
     
     // Add a location using postcode search (this avoids triggering geolocation)
     const postcodeInput = page.locator('input[placeholder*="postcode" i], input[placeholder*="address" i]').first();
@@ -37,7 +37,7 @@ test.describe('Location Editor', () => {
       if (await searchButton.isVisible()) {
         await searchButton.click();
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(2000); // Wait for search results and map update
+        await page.waitForTimeout(EDITOR_LOAD_TIMEOUT); // Wait for search results and map update
       }
     }
     
@@ -74,7 +74,7 @@ test.describe('Location Editor', () => {
     await page.waitForLoadState('networkidle');
     
     // Wait for profile and map to fully load
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(EDITOR_LOAD_TIMEOUT * 1.5); // Extra time for profile data to load
     
     // Check if geolocation was requested
     const geolocationRequested = await page.evaluate(() => {
@@ -109,7 +109,7 @@ test.describe('Location Editor', () => {
     
     await page.getByRole('tab', { name: /location/i }).click();
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(EDITOR_LOAD_TIMEOUT);
     
     // Add a location using postcode search
     const postcodeInput = page.locator('input[placeholder*="postcode" i], input[placeholder*="address" i]').first();
@@ -119,7 +119,7 @@ test.describe('Location Editor', () => {
       if (await searchButton.isVisible()) {
         await searchButton.click();
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(EDITOR_LOAD_TIMEOUT);
       }
     }
     
@@ -136,7 +136,7 @@ test.describe('Location Editor', () => {
     const useLocationButton = page.locator('button:has-text("Use my location")').first();
     if (await useLocationButton.isVisible()) {
       await useLocationButton.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(EDITOR_LOAD_TIMEOUT);
       
       // Check geolocation call count after clicking button
       const callCountAfter = await page.evaluate(() => {
