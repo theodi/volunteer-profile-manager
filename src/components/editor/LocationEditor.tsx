@@ -409,21 +409,26 @@ export default function LocationEditor({ locations, onChange, homeAddress, isLoa
       }
 
       // Fallback to Nominatim for international addresses
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`,
-        {
-          headers: {
-            "User-Agent": "VolunteerProfileManager/1.0",
-          },
-        }
-      );
-      const data = await response.json();
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`,
+          {
+            headers: {
+              "User-Agent": "VolunteerProfileManager/1.0",
+            },
+          }
+        );
+        const data = await response.json();
 
-      if (data.length > 0) {
-        const { lat, lon } = data[0];
-        handleLocationAdd(parseFloat(lat), parseFloat(lon));
-        setMapCenter({ lat: parseFloat(lat), lng: parseFloat(lon) });
-      } else {
+        if (data.length > 0) {
+          const { lat, lon } = data[0];
+          handleLocationAdd(parseFloat(lat), parseFloat(lon));
+          setMapCenter({ lat: parseFloat(lat), lng: parseFloat(lon) });
+        } else {
+          setGeoError("Could not find your home address location. Please add it manually.");
+        }
+      } catch (error) {
+        console.error("Nominatim geocoding error:", error);
         setGeoError("Could not find your home address location. Please add it manually.");
       }
     } catch (error) {
