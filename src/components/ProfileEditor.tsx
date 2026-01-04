@@ -185,7 +185,10 @@ export default function ProfileEditor() {
     if (addr.hasGeo?.latitude && addr.hasGeo?.longitude) {
       const lat = parseFloat(addr.hasGeo.latitude);
       const lng = parseFloat(addr.hasGeo.longitude);
-      if (!isNaN(lat) && !isNaN(lng)) {
+      // Validate coordinates are within valid ranges
+      const isValidLat = !isNaN(lat) && lat >= -90 && lat <= 90;
+      const isValidLng = !isNaN(lng) && lng >= -180 && lng <= 180;
+      if (isValidLat && isValidLng) {
         latitude = lat;
         longitude = lng;
       }

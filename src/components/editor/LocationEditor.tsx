@@ -14,6 +14,9 @@ const LocationMap = dynamic(() => import("./LocationMap"), {
   ),
 });
 
+// UK postcode regex pattern for validation
+const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
+
 // Home address from WebID profile
 export interface HomeAddress {
   streetAddress?: string;
@@ -284,9 +287,7 @@ export default function LocationEditor({ locations, onChange, homeAddress }: Loc
 
     try {
       // Try UK postcode first (postcodes.io)
-      const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
-      
-      if (ukPostcodeRegex.test(postcode)) {
+      if (UK_POSTCODE_REGEX.test(postcode)) {
         const response = await fetch(
           `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
         );
@@ -369,11 +370,12 @@ export default function LocationEditor({ locations, onChange, homeAddress }: Loc
       }
 
       // Otherwise, geocode the address
+      // Order by specificity for better geocoding accuracy
       const searchQuery = [
-        homeAddress.postalCode,
+        homeAddress.streetAddress,
         homeAddress.locality,
         homeAddress.region,
-        homeAddress.streetAddress,
+        homeAddress.postalCode,
         homeAddress.countryName,
       ].filter(Boolean).join(", ");
 
@@ -384,8 +386,7 @@ export default function LocationEditor({ locations, onChange, homeAddress }: Loc
       }
 
       // Try UK postcode first if it looks like one
-      const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
-      if (homeAddress.postalCode && ukPostcodeRegex.test(homeAddress.postalCode)) {
+      if (homeAddress.postalCode && UK_POSTCODE_REGEX.test(homeAddress.postalCode)) {
         try {
           const response = await fetch(
             `https://api.postcodes.io/postcodes/${encodeURIComponent(homeAddress.postalCode)}`
