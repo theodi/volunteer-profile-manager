@@ -8,8 +8,6 @@
  * which implements proper pim:storage discovery as per Solid protocol.
  */
 
-import { NAMESPACES } from './namespaces';
-
 /**
  * Extracts the parent container URI from a resource URI.
  * 

@@ -163,8 +163,7 @@ export default function ProfileEditor() {
     availableStorages,
     requiresSelection,
     selectStorage,
-    retryDiscovery,
-    selectedStorage
+    retryDiscovery
   } = useStorage();
 
   // Load the volunteer profile resource

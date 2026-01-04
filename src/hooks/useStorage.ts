@@ -14,8 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSolidAuth } from '@ldo/solid-react';
 import { 
   discoverStorage, 
-  getVolunteerProfileUri,
-  StorageDiscoveryResult 
+  getVolunteerProfileUri
 } from '@/lib/storageDiscovery';
 
 /** State of storage discovery */
