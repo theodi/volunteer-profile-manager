@@ -29,5 +29,5 @@ export const TEST_CREDENTIALS = {
   password: 'test123',
 } as const;
 
-/** Local CSS issuer URL (Next.js app acts as OIDC proxy) */
-export const LOCAL_CSS_ISSUER = 'http://localhost:3000';
+/** Local CSS issuer URL (Community Solid Server is the OIDC provider) */
+export const LOCAL_CSS_ISSUER = 'http://localhost:3001';
