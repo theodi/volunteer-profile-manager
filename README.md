@@ -65,6 +65,49 @@ The `start:dev` command concurrently runs the [Community Solid Server](https://c
 Note: If you want to change the App Admin WebID, update the last line of `.data/.acr` or reset the file and re-run `npm run build` after setting the `NEXT_PUBLIC_ADMIN_WEBID` in `.env`.
 
 
+## Testing
+
+This project includes end-to-end tests using [Playwright](https://playwright.dev/).
+
+### Running Tests
+
+First, ensure the development servers are running:
+
+```bash
+npm run start:dev
+```
+
+Then, in a separate terminal, run the tests:
+
+```bash
+# Run all tests
+npm run test:e2e
+
+# Run tests with UI
+npm run test:e2e:ui
+
+# Run tests in headed mode (see browser)
+npm run test:e2e:headed
+
+# Debug tests
+npm run test:e2e:debug
+```
+
+### Test Coverage
+
+The test suite includes:
+- **Smoke tests**: Basic functionality and page loading
+- **Availability tests**: Setting volunteer availability and time preferences
+- **Skills tests**: Adding and removing skills and requirements
+- **Causes tests**: Selecting volunteer causes/interests
+- **Location tests**: Managing location preferences
+- **Integration tests**: Full profile workflow with data persistence
+
+All tests verify that data persists across logout/login cycles, ensuring the Solid Pod storage works correctly.
+
+For more details, see [tests/README.md](tests/README.md).
+
+
 ## Architecture
 
 Solid specifications include definitions for a [standard storage API](https://solidproject.org/TR/protocol), an [authentication mechanism](https://solidproject.org/TR/oidc) and an [access control language](https://solidproject.org/TR/acp).
