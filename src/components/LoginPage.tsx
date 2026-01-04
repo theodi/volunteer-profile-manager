@@ -78,7 +78,9 @@ function LoginPageContent() {
 
     setIsLoading(true);
     try {
-      await login(trimmedIssuer);
+      // Build the client identifier document URL based on current origin
+      const clientId = `${window.location.origin}/api/client-id`;
+      await login(trimmedIssuer, { clientId });
     } catch (error) {
       console.error("Login failed:", error);
       setIsLoading(false);
