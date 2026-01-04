@@ -52,7 +52,7 @@ test.describe('Client Identifier Document', () => {
     const response = await request.get('/api/client-id');
     const clientId = await response.json();
     
-    expect(clientId.redirect_uris).toContain(`${baseURL}/`);
+    expect(clientId.redirect_uris).toContain(`${baseURL}/login`);
   });
 
   test('should have post_logout_redirect_uris defined', async ({ request, baseURL }) => {

@@ -9,6 +9,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   
+  /* Global setup to clean data directory before seeding */
+  globalSetup: './tests/global-setup.ts',
+  
   /* Run tests in files in parallel */
   fullyParallel: true,
   

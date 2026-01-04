@@ -259,22 +259,28 @@ export async function loginToLocalCSS(
   // Wait for authentication to complete by checking for profile page elements
   await page.waitForLoadState('networkidle');
   
-  // Verify logged in by checking for logout button
-  const logoutButton = page.getByRole('button', { name: /logout/i });
-  await expect(logoutButton).toBeVisible({ timeout: OAUTH_REDIRECT_TIMEOUT });
+  // Verify logged in by checking for the profile editor heading
+  const profileHeading = page.getByRole('heading', { name: /volunteer profile/i });
+  await expect(profileHeading).toBeVisible({ timeout: OAUTH_REDIRECT_TIMEOUT });
 }
 
 /**
  * Logout from the application
  * 
- * Clicks the logout button and waits for the login page
+ * Opens the profile menu dropdown and clicks sign out
  * 
  * @param page - Playwright page object
  */
 export async function logout(page: Page) {
-  // Click logout button
-  const logoutButton = page.getByRole('button', { name: /logout/i });
-  await logoutButton.click();
+  // First, click the profile menu button to open the dropdown
+  // The profile menu button is the button with a user avatar in the header
+  const profileMenuButton = page.locator('header button').filter({ has: page.locator('img, svg') }).last();
+  await profileMenuButton.click();
+  
+  // Wait for dropdown to appear and click sign out
+  const signOutButton = page.getByRole('button', { name: /sign out/i });
+  await expect(signOutButton).toBeVisible({ timeout: 5000 });
+  await signOutButton.click();
   
   // Wait for redirect to login page using deterministic URL wait
   await page.waitForURL(/\/login(?:\?|$)/, { timeout: OAUTH_REDIRECT_TIMEOUT });
