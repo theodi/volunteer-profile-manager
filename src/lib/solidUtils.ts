@@ -2,109 +2,13 @@
  * Solid resource utilities for profile management
  * 
  * This module provides utilities for working with Solid resources,
- * including profile URI derivation, container verification, and
- * HTTP error handling.
+ * including container verification and HTTP error handling.
+ * 
+ * NOTE: Storage discovery is now handled by src/lib/storageDiscovery.ts
+ * which implements proper pim:storage discovery as per Solid protocol.
  */
 
 import { NAMESPACES } from './namespaces';
-
-/**
- * Known WebID patterns from common Pod providers.
- * Maps regex patterns to their profile path extraction logic.
- */
-const WEBID_PATTERNS: Array<{
-  name: string;
-  pattern: RegExp;
-  extractPodRoot: (match: RegExpMatchArray) => string;
-}> = [
-  // Inrupt PodSpaces: https://id.inrupt.com/{username}/profile/card#me
-  {
-    name: 'Inrupt PodSpaces',
-    pattern: /^(https:\/\/[^/]+\/[^/]+)\/profile\/card#me$/,
-    extractPodRoot: (match) => match[1],
-  },
-  // SolidCommunity.net: https://{username}.solidcommunity.net/profile/card#me
-  {
-    name: 'SolidCommunity.net',
-    pattern: /^(https:\/\/[^/]+\.solidcommunity\.net)\/profile\/card#me$/,
-    extractPodRoot: (match) => match[1],
-  },
-  // solidweb.org: https://{username}.solidweb.org/profile/card#me
-  {
-    name: 'solidweb.org',
-    pattern: /^(https:\/\/[^/]+\.solidweb\.org)\/profile\/card#me$/,
-    extractPodRoot: (match) => match[1],
-  },
-  // Generic CSS instances: https://{server}/{username}/profile/card#me
-  {
-    name: 'Generic CSS',
-    pattern: /^(https?:\/\/[^/]+(?::\d+)?\/[^/]+)\/profile\/card#me$/,
-    extractPodRoot: (match) => match[1],
-  },
-  // Generic pattern: https://{server}/profile/card#me (subdomain-based pods)
-  {
-    name: 'Subdomain-based Pod',
-    pattern: /^(https?:\/\/[^/]+(?::\d+)?)\/profile\/card#me$/,
-    extractPodRoot: (match) => match[1],
-  },
-];
-
-/**
- * Derives the volunteer profile URI from a WebID.
- * 
- * This function attempts to determine the Pod root from the WebID
- * and constructs a standard path for the volunteer profile.
- * 
- * @param webId - The user's WebID
- * @returns The derived profile URI, or undefined if derivation fails
- */
-export function deriveProfileUri(webId: string | undefined): string | undefined {
-  if (!webId) return undefined;
-
-  // Try each known pattern
-  for (const { pattern, extractPodRoot } of WEBID_PATTERNS) {
-    const match = webId.match(pattern);
-    if (match) {
-      const podRoot = extractPodRoot(match);
-      return `${podRoot}/volunteer/profile`;
-    }
-  }
-
-  // Fallback: try to extract pod root by removing #me and profile/card
-  // This handles edge cases we might not have anticipated
-  try {
-    const url = new URL(webId);
-    
-    // Remove fragment (#me)
-    url.hash = '';
-    
-    // Get the pathname and try to find profile/card
-    const pathParts = url.pathname.split('/').filter(Boolean);
-    
-    // Look for profile/card pattern
-    const profileIndex = pathParts.findIndex(
-      (part, idx) => part === 'profile' && pathParts[idx + 1] === 'card'
-    );
-    
-    if (profileIndex !== -1) {
-      // Remove profile/card from path
-      pathParts.splice(profileIndex);
-      url.pathname = '/' + pathParts.join('/');
-      return `${url.origin}${url.pathname}/volunteer/profile`;
-    }
-    
-    // Last resort: just use the WebID origin with a conventional path
-    // This might not work for all providers but provides some fallback
-    console.warn(
-      `Could not derive volunteer profile URI from WebID: ${webId}. ` +
-      'Using origin-based fallback.'
-    );
-    return `${url.origin}/volunteer/profile`;
-  } catch (error) {
-    console.error('Failed to parse WebID URL:', error);
-    return undefined;
-  }
-}
 
 /**
  * Extracts the parent container URI from a resource URI.

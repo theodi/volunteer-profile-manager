@@ -27,6 +27,18 @@ export const NAMESPACES = {
   
   /** vCard namespace */
   vcard: 'http://www.w3.org/2006/vcard/ns#',
+  
+  /** Solid Personal Information Model namespace */
+  pim: 'http://www.w3.org/ns/pim/space#',
+  
+  /** RDF namespace */
+  rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+  
+  /** LDP (Linked Data Platform) namespace */
+  ldp: 'http://www.w3.org/ns/ldp#',
+  
+  /** RDFS namespace */
+  rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
 } as const;
 
 /**
