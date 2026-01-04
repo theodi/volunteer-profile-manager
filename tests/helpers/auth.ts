@@ -130,6 +130,48 @@ async function ensureTestAccountExists(
     // Wait for registration to complete
     await page.waitForLoadState('networkidle');
     
+    // After submission, verify that registration either succeeded or the account already exists.
+    // This makes the registration fallback more robust and avoids silently continuing on failure.
+    
+    // Possible success indicator messages
+    const successMessage = page
+      .locator('text=/account created|registration successful|successfully created/i')
+      .first();
+    
+    // Possible "already exists" indicator messages
+    const alreadyExistsMessage = page
+      .locator('text=/already exists|account exists|email in use/i')
+      .first();
+    
+    const registrationSucceeded = await successMessage.isVisible().catch(() => false);
+    const accountAlreadyExists = await alreadyExistsMessage.isVisible().catch(() => false);
+    
+    // Detect if we were redirected to a login form instead of staying on the registration page
+    const loginEmailInput = page.locator('input[name="email"], input[type="email"]').first();
+    const loginPasswordInput = page.locator('input[name="password"], input[type="password"]').first();
+    const loginSubmitButton = page
+      .locator('button[type="submit"], input[type="submit"]')
+      .filter({ hasText: /log in|login|sign in/i })
+      .first();
+    
+    const hasLoginEmail = await loginEmailInput.isVisible().catch(() => false);
+    const hasLoginPassword = await loginPasswordInput.isVisible().catch(() => false);
+    const hasLoginSubmit = await loginSubmitButton.isVisible().catch(() => false);
+    
+    const redirectedToLoginForm = hasLoginEmail && hasLoginPassword && hasLoginSubmit;
+    
+    if (!registrationSucceeded && !accountAlreadyExists && !redirectedToLoginForm) {
+      const currentUrl = page.url();
+      const looksLikeAuthPage = /login|signin|account|authorize/i.test(currentUrl);
+      
+      if (!looksLikeAuthPage) {
+        throw new Error(
+          'Test account registration outcome could not be determined. ' +
+            'No success, "account exists" message, or login form detected after registration submit.'
+        );
+      }
+    }
+    
     // Verify registration outcome - check for success, account exists, or redirect to login
     const successMessage = page
       .locator('text=/account created|registration successful|successfully created/i')
