@@ -14,9 +14,21 @@ const LocationMap = dynamic(() => import("./LocationMap"), {
   ),
 });
 
+// Home address from WebID profile
+export interface HomeAddress {
+  streetAddress?: string;
+  locality?: string;
+  region?: string;
+  postalCode?: string;
+  countryName?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 interface LocationEditorProps {
   locations: PreferredLocation[];
   onChange: (locations: PreferredLocation[]) => void;
+  homeAddress?: HomeAddress;
 }
 
 interface LocationAddress {
@@ -28,7 +40,7 @@ interface LocationAddress {
   isLoading: boolean;
 }
 
-export default function LocationEditor({ locations, onChange }: LocationEditorProps) {
+export default function LocationEditor({ locations, onChange, homeAddress }: LocationEditorProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -38,6 +50,7 @@ export default function LocationEditor({ locations, onChange }: LocationEditorPr
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>();
   const [hasInitialized, setHasInitialized] = useState(false);
   const [addresses, setAddresses] = useState<Record<string, LocationAddress>>({});
+  const [isUsingHomeAddress, setIsUsingHomeAddress] = useState(false);
   
   // Track which keys we've already started fetching to prevent duplicate requests
   const fetchingRef = useRef<Set<string>>(new Set());
@@ -316,6 +329,107 @@ export default function LocationEditor({ locations, onChange }: LocationEditorPr
     }
   }, [postcodeInput, handleLocationAdd]);
 
+  // Check if home address has usable location data
+  const hasHomeAddressLocation = useMemo(() => {
+    if (!homeAddress) return false;
+    // Has direct coordinates
+    if (homeAddress.latitude !== undefined && homeAddress.longitude !== undefined) {
+      return true;
+    }
+    // Has searchable address info
+    return !!(homeAddress.postalCode || homeAddress.locality || homeAddress.streetAddress);
+  }, [homeAddress]);
+
+  // Format home address for display
+  const homeAddressDisplay = useMemo(() => {
+    if (!homeAddress) return "";
+    const parts = [
+      homeAddress.streetAddress,
+      homeAddress.locality,
+      homeAddress.region,
+      homeAddress.postalCode,
+      homeAddress.countryName,
+    ].filter(Boolean);
+    return parts.join(", ");
+  }, [homeAddress]);
+
+  const handleUseHomeAddress = useCallback(async () => {
+    if (!homeAddress) return;
+
+    setIsUsingHomeAddress(true);
+    setGeoError(null);
+
+    try {
+      // If we have direct coordinates, use them
+      if (homeAddress.latitude !== undefined && homeAddress.longitude !== undefined) {
+        handleLocationAdd(homeAddress.latitude, homeAddress.longitude);
+        setMapCenter({ lat: homeAddress.latitude, lng: homeAddress.longitude });
+        setIsUsingHomeAddress(false);
+        return;
+      }
+
+      // Otherwise, geocode the address
+      const searchQuery = [
+        homeAddress.postalCode,
+        homeAddress.locality,
+        homeAddress.region,
+        homeAddress.streetAddress,
+        homeAddress.countryName,
+      ].filter(Boolean).join(", ");
+
+      if (!searchQuery) {
+        setGeoError("No valid address information found in your profile");
+        setIsUsingHomeAddress(false);
+        return;
+      }
+
+      // Try UK postcode first if it looks like one
+      const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
+      if (homeAddress.postalCode && ukPostcodeRegex.test(homeAddress.postalCode)) {
+        try {
+          const response = await fetch(
+            `https://api.postcodes.io/postcodes/${encodeURIComponent(homeAddress.postalCode)}`
+          );
+          const data = await response.json();
+
+          if (data.status === 200 && data.result) {
+            const { latitude, longitude } = data.result;
+            handleLocationAdd(latitude, longitude);
+            setMapCenter({ lat: latitude, lng: longitude });
+            setIsUsingHomeAddress(false);
+            return;
+          }
+        } catch (error) {
+          console.log("UK postcode lookup failed, trying Nominatim:", error);
+        }
+      }
+
+      // Fallback to Nominatim for international addresses
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`,
+        {
+          headers: {
+            "User-Agent": "VolunteerProfileManager/1.0",
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data.length > 0) {
+        const { lat, lon } = data[0];
+        handleLocationAdd(parseFloat(lat), parseFloat(lon));
+        setMapCenter({ lat: parseFloat(lat), lng: parseFloat(lon) });
+      } else {
+        setGeoError("Could not find your home address location. Please add it manually.");
+      }
+    } catch (error) {
+      console.error("Home address geocoding error:", error);
+      setGeoError("Failed to locate your home address. Please try again or add manually.");
+    } finally {
+      setIsUsingHomeAddress(false);
+    }
+  }, [homeAddress, handleLocationAdd]);
+
   const selectedLocation = selectedIndex !== null ? locations[selectedIndex] : null;
 
   return (
@@ -384,6 +498,28 @@ export default function LocationEditor({ locations, onChange }: LocationEditorPr
           )}
           Use my location
         </button>
+
+        {/* Use home address button - only shown if home address is available */}
+        {hasHomeAddressLocation && (
+          <button
+            onClick={handleUseHomeAddress}
+            disabled={isUsingHomeAddress}
+            className="px-4 py-2 border border-purple-300 bg-purple-50 rounded-lg hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-purple-700"
+            title={homeAddressDisplay || "Use home address from your profile"}
+          >
+            {isUsingHomeAddress ? (
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            )}
+            Use home address
+          </button>
+        )}
       </div>
 
       {geoError && (

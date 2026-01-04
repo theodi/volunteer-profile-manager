@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSolidAuth, useLdo, useSubject, useResource } from "@ldo/solid-react";
 import { useRouter } from "next/navigation";
 import { VolunteerProfileShapeType } from "@/ldo/volunteer.shapeTypes";
 import { WebIdProfileShapeType } from "@/ldo/profile.shapeTypes";
 import type { VolunteerProfile, PreferredLocation, PreferredTime, Point } from "@/ldo/volunteer.typings";
-import LocationEditor from "./editor/LocationEditor";
+import LocationEditor, { HomeAddress } from "./editor/LocationEditor";
 import TimeEditor from "./editor/TimeEditor";
 import SkillsEditor from "./editor/SkillsEditor";
 import CausesEditor from "./editor/CausesEditor";
@@ -172,6 +172,35 @@ export default function ProfileEditor() {
     webIdProfile?.img?.["@id"] || 
     (webIdProfileAny?.hasPhoto as { "@id": string } | undefined)?.["@id"] ||
     (webIdProfileAny?.depiction as { "@id": string } | undefined)?.["@id"];
+
+  // Extract home address from WebID profile
+  const homeAddress = useMemo((): HomeAddress | undefined => {
+    if (!webIdProfile?.hasAddress) return undefined;
+    
+    const addr = webIdProfile.hasAddress;
+    // Parse latitude/longitude from geo if available
+    let latitude: number | undefined;
+    let longitude: number | undefined;
+    
+    if (addr.hasGeo?.latitude && addr.hasGeo?.longitude) {
+      const lat = parseFloat(addr.hasGeo.latitude);
+      const lng = parseFloat(addr.hasGeo.longitude);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        latitude = lat;
+        longitude = lng;
+      }
+    }
+    
+    return {
+      streetAddress: addr["street-address"],
+      locality: addr.locality,
+      region: addr.region,
+      postalCode: addr["postal-code"],
+      countryName: addr["country-name"],
+      latitude,
+      longitude,
+    };
+  }, [webIdProfile]);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -524,6 +553,7 @@ export default function ProfileEditor() {
               <LocationEditor
                 locations={locations}
                 onChange={setLocations}
+                homeAddress={homeAddress}
               />
             )}
             {activeTab === "time" && (
