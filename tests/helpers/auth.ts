@@ -106,7 +106,9 @@ async function ensureTestAccountExists(
   // Check if we're on a registration form
   const emailInput = page.locator('input[name="email"], input[type="email"]').first();
   const passwordInput = page.locator('input[name="password"], input[type="password"]').first();
-  const confirmPasswordInput = page.locator('input[name="confirmPassword"], input[name="password_confirm"]').first();
+  // Use .nth(1) for confirm password to avoid matching the same element as passwordInput
+  const confirmPasswordInput = page.locator('input[name="confirmPassword"], input[name="password_confirm"]').first()
+    .or(page.locator('input[name="password"], input[type="password"]').nth(1));
   
   const hasRegistrationForm = await emailInput.isVisible().catch(() => false);
   
@@ -115,7 +117,7 @@ async function ensureTestAccountExists(
     await emailInput.fill(email);
     await passwordInput.fill(password);
     
-    // Some forms have confirm password field
+    // Some forms have confirm password field (check for a second password input)
     const hasConfirmPassword = await confirmPasswordInput.isVisible().catch(() => false);
     if (hasConfirmPassword) {
       await confirmPasswordInput.fill(password);
@@ -127,6 +129,35 @@ async function ensureTestAccountExists(
     
     // Wait for registration to complete
     await page.waitForLoadState('networkidle');
+    
+    // Verify registration outcome - check for success, account exists, or redirect to login
+    const successMessage = page
+      .locator('text=/account created|registration successful|successfully created/i')
+      .first();
+    const alreadyExistsMessage = page
+      .locator('text=/already exists|account exists|email in use/i')
+      .first();
+    
+    const registrationSucceeded = await successMessage.isVisible().catch(() => false);
+    const accountAlreadyExists = await alreadyExistsMessage.isVisible().catch(() => false);
+    
+    // Check if we were redirected to a login form
+    const loginSubmitButton = page
+      .locator('button[type="submit"], input[type="submit"]')
+      .filter({ hasText: /log in|login|sign in/i })
+      .first();
+    const redirectedToLoginForm = await loginSubmitButton.isVisible().catch(() => false);
+    
+    // Also check if we're on an auth-related page by URL
+    const currentUrl = page.url();
+    const looksLikeAuthPage = /login|signin|account|authorize/i.test(currentUrl);
+    
+    if (!registrationSucceeded && !accountAlreadyExists && !redirectedToLoginForm && !looksLikeAuthPage) {
+      throw new Error(
+        'Test account registration outcome could not be determined. ' +
+        'No success, "account exists" message, or login form detected after registration submit.'
+      );
+    }
   }
 }
 
