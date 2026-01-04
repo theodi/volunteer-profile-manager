@@ -10,6 +10,10 @@ import LocationEditor from "./editor/LocationEditor";
 import TimeEditor from "./editor/TimeEditor";
 import SkillsEditor from "./editor/SkillsEditor";
 import CausesEditor from "./editor/CausesEditor";
+import StorageSelector from "./StorageSelector";
+import { toVolunteeringUri, toVolunteerProfileUri, toTimeUri } from "@/lib/namespaces";
+import { getErrorStatusCode, formatErrorMessage } from "@/lib/solidUtils";
+import { useStorage } from "@/hooks/useStorage";
 
 // Available skills from SHACL shapes
 export const SKILLS = [
@@ -125,20 +129,20 @@ export const CAUSES = [
 
 // Days of week from W3C Time Ontology (using full URIs as stored in RDF)
 export const DAYS_OF_WEEK = [
-  { id: "http://www.w3.org/2006/time#Monday", label: "Monday" },
-  { id: "http://www.w3.org/2006/time#Tuesday", label: "Tuesday" },
-  { id: "http://www.w3.org/2006/time#Wednesday", label: "Wednesday" },
-  { id: "http://www.w3.org/2006/time#Thursday", label: "Thursday" },
-  { id: "http://www.w3.org/2006/time#Friday", label: "Friday" },
-  { id: "http://www.w3.org/2006/time#Saturday", label: "Saturday" },
-  { id: "http://www.w3.org/2006/time#Sunday", label: "Sunday" },
+  { id: toTimeUri("Monday"), label: "Monday" },
+  { id: toTimeUri("Tuesday"), label: "Tuesday" },
+  { id: toTimeUri("Wednesday"), label: "Wednesday" },
+  { id: toTimeUri("Thursday"), label: "Thursday" },
+  { id: toTimeUri("Friday"), label: "Friday" },
+  { id: toTimeUri("Saturday"), label: "Saturday" },
+  { id: toTimeUri("Sunday"), label: "Sunday" },
 ];
 
 // Times of day (using full URIs as stored in RDF)
 export const TIMES_OF_DAY = [
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Morning", label: "Morning" },
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Afternoon", label: "Afternoon" },
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Evening", label: "Evening" },
+  { id: toVolunteerProfileUri("Morning"), label: "Morning" },
+  { id: toVolunteerProfileUri("Afternoon"), label: "Afternoon" },
+  { id: toVolunteerProfileUri("Evening"), label: "Evening" },
 ];
 
 export default function ProfileEditor() {
@@ -151,10 +155,17 @@ export default function ProfileEditor() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Derive the profile URI from the WebID
-  const profileUri = session.webId
-    ? session.webId.replace(/\/profile\/card#me$/, "/volunteer/profile")
-    : undefined;
+  // Use proper pim:storage discovery to find the profile location
+  const { 
+    isLoading: isStorageLoading, 
+    error: storageError,
+    profileUri,
+    availableStorages,
+    requiresSelection,
+    selectStorage,
+    retryDiscovery,
+    selectedStorage
+  } = useStorage();
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
@@ -322,14 +333,30 @@ export default function ProfileEditor() {
       setSaveMessage({ type: "success", text: "Profile saved successfully!" });
     } catch (error) {
       console.error("Save error:", error);
+      
+      // Handle specific HTTP error codes
+      const statusCode = getErrorStatusCode(error);
+      
+      if (statusCode === 401) {
+        // Authentication expired - redirect to login
+        setSaveMessage({
+          type: "error",
+          text: "Your session has expired. Please log in again.",
+        });
+        await logout();
+        router.replace("/login");
+        return;
+      }
+      
+      // Use formatted error message for other errors
       setSaveMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to save profile",
+        text: formatErrorMessage(error, "Failed to save profile"),
       });
     } finally {
       setIsSaving(false);
     }
-  }, [profileUri, session.webId, createData, commitData, profileResource, locations, times, skills, requirements, causes]);
+  }, [profileUri, session.webId, createData, commitData, profileResource, locations, times, skills, requirements, causes, logout, router]);
 
   const handleLogout = async () => {
     await logout();
@@ -338,6 +365,53 @@ export default function ProfileEditor() {
 
   if (!session.isLoggedIn) {
     return null;
+  }
+
+  // Show loading state while discovering storage
+  if (isStorageLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Discovering your storage location...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show storage selector if multiple storages available
+  if (requiresSelection && availableStorages.length > 1) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <StorageSelector 
+          storages={availableStorages} 
+          onSelect={selectStorage}
+        />
+      </div>
+    );
+  }
+
+  // Show error if storage discovery failed
+  if (storageError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Storage Not Found</h2>
+          <p className="text-gray-600 mb-4">{storageError}</p>
+          <button
+            onClick={retryDiscovery}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const tabs = [

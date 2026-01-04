@@ -8,12 +8,27 @@ interface AuthWrapperProps {
   children: React.ReactNode;
 }
 
-// Check if there's any indication of a session in storage
+/**
+ * Checks if there's any indication of a previous session in storage.
+ * 
+ * This is used as a hint to wait longer for session restoration during
+ * initial page load. It's not the primary session detection mechanism -
+ * that's handled by the useSolidAuth hook's session.isLoggedIn property.
+ * 
+ * Note: This checks localStorage keys as a workaround because the
+ * @inrupt/solid-client-authn-browser library handles session restoration
+ * asynchronously, and we need to know whether to wait for it before
+ * redirecting to login.
+ * 
+ * @returns true if there appears to be session data in storage
+ */
 function hasSessionInStorage(): boolean {
   if (typeof window === "undefined") return false;
 
   try {
     const keys = Object.keys(localStorage);
+    // Look for keys that indicate a previous authentication session
+    // These key patterns are from @inrupt/solid-client-authn-browser
     return keys.some(
       (key) =>
         key.includes("solidClientAuthn") ||
