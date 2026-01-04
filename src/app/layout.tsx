@@ -11,6 +11,9 @@ import LdoProvider from "@/components/providers/LdoProvider";
 export const metadata: Metadata = {
     title: "Volunteer Profile Editor",
     description: "Manage your volunteering preferences with Solid",
+    icons: {
+        icon: "/icon.svg",
+    },
 };
 
 /**
