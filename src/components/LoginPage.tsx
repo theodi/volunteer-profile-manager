@@ -71,7 +71,14 @@ function LoginPageContent() {
   };
 
   const handleLogin = async () => {
-    const trimmedIssuer = issuerInput.trim();
+    let trimmedIssuer = issuerInput.trim();
+    
+    // Normalize URL: add https:// if no protocol is specified
+    const lowerIssuer = trimmedIssuer.toLowerCase();
+    if (trimmedIssuer && !lowerIssuer.startsWith('http://') && !lowerIssuer.startsWith('https://')) {
+      trimmedIssuer = `https://${trimmedIssuer}`;
+    }
+    
     if (!validateIssuerUrl(trimmedIssuer)) {
       return;
     }
