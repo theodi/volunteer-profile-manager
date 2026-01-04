@@ -50,12 +50,9 @@ export async function loginToLocalCSS(
   // Wait for the OIDC issuer input to be ready
   await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: OAUTH_REDIRECT_TIMEOUT });
   
-  // Select "Local CSS" preset button
-  await page.click('button:has-text("Local CSS")');
-  
-  // Verify the input has the correct value (Next.js app acts as OIDC proxy)
+  // Fill in the local CSS issuer URL directly (Local CSS preset button was removed)
   const issuerInput = page.locator('#oidc-issuer');
-  await expect(issuerInput).toHaveValue(LOCAL_CSS_ISSUER);
+  await issuerInput.fill(LOCAL_CSS_ISSUER);
   
   // Click the "Next" button to initiate OAuth flow
   await page.click('button[type="submit"]:has-text("Next")');
