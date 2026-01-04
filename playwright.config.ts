@@ -12,6 +12,14 @@ export default defineConfig({
   /* Global setup to clean data directory before seeding */
   globalSetup: './tests/global-setup.ts',
   
+  /* Default timeout for each test - localhost should be fast */
+  timeout: 30000,
+  
+  /* Timeout for expect() assertions */
+  expect: {
+    timeout: 5000,
+  },
+  
   /* Run tests in files in parallel */
   fullyParallel: true,
   

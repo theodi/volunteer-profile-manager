@@ -11,7 +11,7 @@ test.describe('Smoke Tests', () => {
     await page.goto('/login');
     
     // Verify we can see the login page elements
-    await expect(page.getByText(/sign in/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /sign in/i }).first()).toBeVisible();
     await expect(page.getByText(/solid identity provider/i)).toBeVisible();
     
     // Verify the OIDC issuer input exists
@@ -64,7 +64,7 @@ test.describe('Smoke Tests', () => {
     await page.fill('#oidc-issuer', LOCAL_CSS_ISSUER);
     
     // The Next button should be enabled (not disabled)
-    const nextButton = page.getByRole('button', { name: /next/i });
+    const nextButton = page.getByRole('button', { name: 'Next', exact: true });
     await expect(nextButton).toBeEnabled();
   });
 });

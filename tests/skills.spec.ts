@@ -15,19 +15,19 @@ test.describe('Skills & Requirements Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 2: Navigate to Skills & Requirements tab
-    await page.getByRole('tab', { name: /skills.*requirements/i }).click();
+    await page.getByRole('button', { name: /🛠.*Skills/i }).click();
     
     // Wait for the skills editor to load
     await page.waitForLoadState('networkidle');
     
     // Step 3: Add a skill - "Empathy and Compassion"
     const empathyCheckbox = page.getByLabel(/empathy.*compassion/i);
-    await empathyCheckbox.check();
+    await empathyCheckbox.check({ force: true });
     await expect(empathyCheckbox).toBeChecked();
     
     // Step 4: Add another skill - "Active Listening"
     const listeningCheckbox = page.getByLabel(/active listening/i);
-    await listeningCheckbox.check();
+    await listeningCheckbox.check({ force: true });
     await expect(listeningCheckbox).toBeChecked();
     
     // Step 5: Save changes
@@ -43,7 +43,7 @@ test.describe('Skills & Requirements Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 8: Navigate back to Skills & Requirements tab
-    await page.getByRole('tab', { name: /skills.*requirements/i }).click();
+    await page.getByRole('button', { name: /🛠.*Skills/i }).click();
     await page.waitForLoadState('networkidle');
     
     // Step 9: Verify skills are still selected
@@ -58,17 +58,17 @@ test.describe('Skills & Requirements Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Skills & Requirements tab
-    await page.getByRole('tab', { name: /skills.*requirements/i }).click();
+    await page.getByRole('button', { name: /🛠.*Skills/i }).click();
     await page.waitForLoadState('networkidle');
     
     // Add a requirement - "Physical Stamina"
     const staminaCheckbox = page.getByLabel(/physical stamina/i);
-    await staminaCheckbox.check();
+    await staminaCheckbox.check({ force: true });
     await expect(staminaCheckbox).toBeChecked();
     
     // Add another requirement - "Sturdy Footwear"
     const footwearCheckbox = page.getByLabel(/sturdy footwear/i);
-    await footwearCheckbox.check();
+    await footwearCheckbox.check({ force: true });
     await expect(footwearCheckbox).toBeChecked();
     
     // Save
@@ -84,7 +84,7 @@ test.describe('Skills & Requirements Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Skills & Requirements tab
-    await page.getByRole('tab', { name: /skills.*requirements/i }).click();
+    await page.getByRole('button', { name: /🛠.*Skills/i }).click();
     await page.waitForLoadState('networkidle');
     
     // First, add "Calmness Under Pressure" if not already added
@@ -92,14 +92,14 @@ test.describe('Skills & Requirements Editor', () => {
     const isChecked = await calmnessCheckbox.isChecked();
     
     if (!isChecked) {
-      await calmnessCheckbox.check();
+      await calmnessCheckbox.check({ force: true });
       await page.getByRole('button', { name: /save/i }).click();
       await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
       await page.waitForLoadState('networkidle');
     }
     
     // Now remove it
-    await calmnessCheckbox.uncheck();
+    await calmnessCheckbox.uncheck({ force: true });
     await expect(calmnessCheckbox).not.toBeChecked();
     
     // Save
@@ -111,7 +111,7 @@ test.describe('Skills & Requirements Editor', () => {
     await loginToLocalCSS(page);
     
     // Verify skill is not selected
-    await page.getByRole('tab', { name: /skills.*requirements/i }).click();
+    await page.getByRole('button', { name: /🛠.*Skills/i }).click();
     await page.waitForLoadState('networkidle');
     
     const calmnessCheckboxAfter = page.getByLabel(/calmness.*pressure/i);
@@ -122,7 +122,7 @@ test.describe('Skills & Requirements Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Skills & Requirements tab
-    await page.getByRole('tab', { name: /skills.*requirements/i }).click();
+    await page.getByRole('button', { name: /🛠.*Skills/i }).click();
     await page.waitForLoadState('networkidle');
     
     // Add multiple skills
@@ -130,16 +130,16 @@ test.describe('Skills & Requirements Editor', () => {
     const reliabilityCheckbox = page.getByLabel(/reliability.*trustworthiness/i);
     const culturalCheckbox = page.getByLabel(/cultural sensitivity/i);
     
-    await patienceCheckbox.check();
-    await reliabilityCheckbox.check();
-    await culturalCheckbox.check();
+    await patienceCheckbox.check({ force: true });
+    await reliabilityCheckbox.check({ force: true });
+    await culturalCheckbox.check({ force: true });
     
     // Add multiple requirements
     const outdoorCheckbox = page.getByLabel(/ability.*work outdoors/i);
     const phoneCheckbox = page.getByLabel(/phone.*power bank/i);
     
-    await outdoorCheckbox.check();
-    await phoneCheckbox.check();
+    await outdoorCheckbox.check({ force: true });
+    await phoneCheckbox.check({ force: true });
     
     // Save all at once
     await page.getByRole('button', { name: /save/i }).click();

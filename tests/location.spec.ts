@@ -19,7 +19,7 @@ test.describe('Location Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Location tab
-    await page.getByRole('tab', { name: /location/i }).click();
+    await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
     
     // Wait for map or editor to load
@@ -70,7 +70,7 @@ test.describe('Location Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Location tab
-    await page.getByRole('tab', { name: /location/i }).click();
+    await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
     
     // Wait for profile and map to fully load
@@ -107,7 +107,7 @@ test.describe('Location Editor', () => {
     // First login and add location via postcode, then save
     await loginToLocalCSS(page);
     
-    await page.getByRole('tab', { name: /location/i }).click();
+    await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(EDITOR_LOAD_TIMEOUT);
     
@@ -154,7 +154,7 @@ test.describe('Location Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 2: Navigate to Location tab (should be default)
-    const locationTab = page.getByRole('tab', { name: /location/i });
+    const locationTab = page.getByRole('button', { name: '📍Location' });
     await expect(locationTab).toBeVisible();
     
     // Click to ensure we're on the tab
@@ -180,7 +180,7 @@ test.describe('Location Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Location tab
-    await page.getByRole('tab', { name: /location/i }).click();
+    await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
     
     // Try to find postcode input
@@ -208,7 +208,7 @@ test.describe('Location Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Location tab
-    await page.getByRole('tab', { name: /location/i }).click();
+    await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
     
     // Try to use current location or add a location
@@ -237,7 +237,7 @@ test.describe('Location Editor', () => {
       await loginToLocalCSS(page);
       
       // Navigate back to Location tab
-      await page.getByRole('tab', { name: /location/i }).click();
+      await page.getByRole('button', { name: '📍Location' }).click();
       await page.waitForLoadState('networkidle');
       
       // The location should be preserved - try to find location markers or coordinate data

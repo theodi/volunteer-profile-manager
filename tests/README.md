@@ -97,7 +97,7 @@ test('feature data persists after logout/login', async ({ page }) => {
   await loginToLocalCSS(page);
   
   // 2. Make changes (e.g., set availability)
-  await page.getByRole('tab', { name: 'Availability' }).click();
+  await page.getByRole('button', { name: 'Availability' }).click();
   await page.getByLabel('Monday').check();
   await page.getByRole('button', { name: 'Save' }).click();
   
@@ -108,7 +108,7 @@ test('feature data persists after logout/login', async ({ page }) => {
   await loginToLocalCSS(page);
   
   // 5. Verify data is pre-populated correctly
-  await page.getByRole('tab', { name: 'Availability' }).click();
+  await page.getByRole('button', { name: 'Availability' }).click();
   await expect(page.getByLabel('Monday')).toBeChecked();
 });
 ```

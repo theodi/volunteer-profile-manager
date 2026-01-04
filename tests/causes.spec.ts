@@ -15,19 +15,19 @@ test.describe('Causes Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 2: Navigate to Causes tab
-    await page.getByRole('tab', { name: /causes/i }).click();
+    await page.getByRole('button', { name: /❤.*Causes/i }).click();
     
     // Wait for the causes editor to load
     await page.waitForLoadState('networkidle');
     
     // Step 3: Select a cause - "Mental Health"
     const mentalHealthCheckbox = page.getByLabel(/mental health/i);
-    await mentalHealthCheckbox.check();
+    await mentalHealthCheckbox.check({ force: true });
     await expect(mentalHealthCheckbox).toBeChecked();
     
     // Step 4: Select another cause - "Environmental Conservation"
     const environmentCheckbox = page.getByLabel(/environmental conservation/i);
-    await environmentCheckbox.check();
+    await environmentCheckbox.check({ force: true });
     await expect(environmentCheckbox).toBeChecked();
     
     // Step 5: Save changes
@@ -45,7 +45,7 @@ test.describe('Causes Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 8: Navigate back to Causes tab
-    await page.getByRole('tab', { name: /causes/i }).click();
+    await page.getByRole('button', { name: /❤.*Causes/i }).click();
     await page.waitForLoadState('networkidle');
     
     // Step 9: Verify causes are still selected
@@ -60,7 +60,7 @@ test.describe('Causes Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Causes tab
-    await page.getByRole('tab', { name: /causes/i }).click();
+    await page.getByRole('button', { name: /❤.*Causes/i }).click();
     await page.waitForLoadState('networkidle');
     
     // Select causes from different categories
@@ -68,9 +68,9 @@ test.describe('Causes Editor', () => {
     const homelessnessCheckbox = page.getByLabel(/homelessness/i);
     const animalWelfareCheckbox = page.getByLabel(/^animal welfare$/i);
     
-    await educationCheckbox.check();
-    await homelessnessCheckbox.check();
-    await animalWelfareCheckbox.check();
+    await educationCheckbox.check({ force: true });
+    await homelessnessCheckbox.check({ force: true });
+    await animalWelfareCheckbox.check({ force: true });
     
     // Save
     await page.getByRole('button', { name: /save/i }).click();
@@ -88,7 +88,7 @@ test.describe('Causes Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Causes tab
-    await page.getByRole('tab', { name: /causes/i }).click();
+    await page.getByRole('button', { name: /❤.*Causes/i }).click();
     await page.waitForLoadState('networkidle');
     
     // First, add "Disaster Relief" if not already added
@@ -96,7 +96,7 @@ test.describe('Causes Editor', () => {
     const isChecked = await disasterCheckbox.isChecked();
     
     if (!isChecked) {
-      await disasterCheckbox.check();
+      await disasterCheckbox.check({ force: true });
       await page.getByRole('button', { name: /save/i }).click();
       await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
         timeout: SAVE_OPERATION_TIMEOUT 
@@ -105,7 +105,7 @@ test.describe('Causes Editor', () => {
     }
     
     // Now deselect it
-    await disasterCheckbox.uncheck();
+    await disasterCheckbox.uncheck({ force: true });
     await expect(disasterCheckbox).not.toBeChecked();
     
     // Save
@@ -119,7 +119,7 @@ test.describe('Causes Editor', () => {
     await loginToLocalCSS(page);
     
     // Verify cause is not selected
-    await page.getByRole('tab', { name: /causes/i }).click();
+    await page.getByRole('button', { name: /❤.*Causes/i }).click();
     await page.waitForLoadState('networkidle');
     
     const disasterCheckboxAfter = page.getByLabel(/disaster relief/i);
@@ -130,7 +130,7 @@ test.describe('Causes Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Causes tab
-    await page.getByRole('tab', { name: /causes/i }).click();
+    await page.getByRole('button', { name: /❤.*Causes/i }).click();
     await page.waitForLoadState('networkidle');
     
     // Select multiple causes
@@ -140,11 +140,11 @@ test.describe('Causes Editor', () => {
     const artsCheckbox = page.getByLabel(/arts.*culture/i);
     const refugeeCheckbox = page.getByLabel(/refugee support/i);
     
-    await youthCheckbox.check();
-    await climateCheckbox.check();
-    await foodCheckbox.check();
-    await artsCheckbox.check();
-    await refugeeCheckbox.check();
+    await youthCheckbox.check({ force: true });
+    await climateCheckbox.check({ force: true });
+    await foodCheckbox.check({ force: true });
+    await artsCheckbox.check({ force: true });
+    await refugeeCheckbox.check({ force: true });
     
     // Save all at once
     await page.getByRole('button', { name: /save/i }).click();

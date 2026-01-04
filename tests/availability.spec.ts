@@ -15,7 +15,7 @@ test.describe('Time/Availability Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 2: Navigate to Availability tab
-    await page.getByRole('tab', { name: /availability/i }).click();
+    await page.getByRole('button', { name: /🕐.*Availability/i }).click();
     
     // Wait for the availability editor to load by checking for specific content
     await page.waitForSelector('text=Select your preferred days and times', { 
@@ -55,7 +55,7 @@ test.describe('Time/Availability Editor', () => {
     await loginToLocalCSS(page);
     
     // Step 7: Navigate back to Availability tab
-    await page.getByRole('tab', { name: /availability/i }).click();
+    await page.getByRole('button', { name: /🕐.*Availability/i }).click();
     
     // Wait for the availability editor to load
     await page.waitForSelector('text=Select your preferred days and times', { 
@@ -79,7 +79,7 @@ test.describe('Time/Availability Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Availability tab
-    await page.getByRole('tab', { name: /availability/i }).click();
+    await page.getByRole('button', { name: /🕐.*Availability/i }).click();
     await page.waitForSelector('text=Select your preferred days and times', { 
       state: 'visible',
       timeout: 5000 
@@ -112,7 +112,7 @@ test.describe('Time/Availability Editor', () => {
     await loginToLocalCSS(page);
     
     // Navigate to Availability tab
-    await page.getByRole('tab', { name: /availability/i }).click();
+    await page.getByRole('button', { name: /🕐.*Availability/i }).click();
     await page.waitForSelector('text=Select your preferred days and times', { 
       state: 'visible',
       timeout: 5000 
@@ -147,7 +147,7 @@ test.describe('Time/Availability Editor', () => {
     await loginToLocalCSS(page);
     
     // Verify Thursday is not selected
-    await page.getByRole('tab', { name: /availability/i }).click();
+    await page.getByRole('button', { name: /🕐.*Availability/i }).click();
     await page.waitForSelector('text=Select your preferred days and times', { 
       state: 'visible',
       timeout: 5000 

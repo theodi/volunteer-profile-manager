@@ -245,12 +245,30 @@ export async function loginToLocalCSS(
     }
   }
   
-  // Check if there's an authorize/consent page
-  const authorizeButton = page.locator('button:has-text("Authorize"), button:has-text("Allow")').first();
-  const isAuthorizeVisible = await authorizeButton.isVisible().catch(() => false);
-  
-  if (isAuthorizeVisible) {
-    await authorizeButton.click();
+  // Wait for either consent page or redirect back to app
+  // The CSS OAuth flow may show a consent/authorize page
+  // We need to handle this in a loop since navigation happens asynchronously
+  const maxConsentAttempts = 3;
+  for (let attempt = 0; attempt < maxConsentAttempts; attempt++) {
+    await page.waitForLoadState('networkidle');
+    
+    // Check if we're already at the app
+    if (page.url().startsWith('http://localhost:3000')) {
+      break;
+    }
+    
+    // Check if we're on a consent page (URL contains 'consent' or 'authorize')
+    const consentPageUrl = page.url();
+    if (consentPageUrl.includes('consent') || consentPageUrl.includes('authorize')) {
+      // Look for consent/authorize button with proper waiting
+      const authorizeButton = page.locator('button:has-text("Authorize"), button:has-text("Allow"), button:has-text("Consent"), button[type="submit"]').first();
+      await expect(authorizeButton).toBeVisible({ timeout: 5000 });
+      await authorizeButton.click();
+      await page.waitForLoadState('networkidle');
+    }
+    
+    // Wait a moment for any pending navigation
+    await page.waitForTimeout(500);
   }
   
   // Wait for redirect back to the app

@@ -3,25 +3,29 @@
  * 
  * These constants define timeout values and other configuration
  * used across the test suite for consistency and maintainability.
+ * 
+ * All tests run against localhost (Next.js on 3000, CSS on 3001),
+ * so timeouts are kept reasonably short for fast feedback while
+ * still allowing for OAuth redirects and page loads.
  */
 
 /** Time to wait for page navigation and basic DOM updates */
-export const PAGE_TRANSITION_TIMEOUT = 1000;
+export const PAGE_TRANSITION_TIMEOUT = 500;
 
 /** Time to wait for editor components to fully load */
-export const EDITOR_LOAD_TIMEOUT = 2000;
+export const EDITOR_LOAD_TIMEOUT = 1000;
 
-/** Time to wait for save operations to complete */
-export const SAVE_OPERATION_TIMEOUT = 10000;
+/** Time to wait for save operations to complete (network to local CSS) */
+export const SAVE_OPERATION_TIMEOUT = 3000;
 
-/** Time to wait for authentication flows to complete */
-export const AUTH_FLOW_TIMEOUT = 15000;
+/** Time to wait for authentication flows to complete (includes OAuth redirects) */
+export const AUTH_FLOW_TIMEOUT = 10000;
 
 /** Time to wait for OAuth redirect handling */
-export const OAUTH_REDIRECT_TIMEOUT = 10000;
+export const OAUTH_REDIRECT_TIMEOUT = 8000;
 
 /** Time to wait for CSS login page to appear */
-export const CSS_LOGIN_TIMEOUT = 15000;
+export const CSS_LOGIN_TIMEOUT = 8000;
 
 /** Default credentials for test account */
 export const TEST_CREDENTIALS = {
