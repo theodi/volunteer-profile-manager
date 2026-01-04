@@ -71,4 +71,11 @@ test.describe('Client Identifier Document', () => {
     expect(clientId.grant_types).toContain('refresh_token');
     expect(clientId.scope).toContain('offline_access');
   });
+
+  test('should have logo_uri pointing to the application icon', async ({ request, baseURL }) => {
+    const response = await request.get('/api/client-id');
+    const clientId = await response.json();
+    
+    expect(clientId.logo_uri).toBe(`${baseURL}/icon.svg`);
+  });
 });
