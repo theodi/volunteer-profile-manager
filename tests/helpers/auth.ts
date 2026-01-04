@@ -175,6 +175,9 @@ export async function loginToLocalCSS(
   const loginPerformed = await performCSSLogin(page, email, password);
   
   if (loginPerformed) {
+    // Give the page a brief moment to render any potential error messages
+    await page.waitForTimeout(500);
+    
     // Check if login failed (error message visible)
     const hasError = await hasLoginError(page);
     
