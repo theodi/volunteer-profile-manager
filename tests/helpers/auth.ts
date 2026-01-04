@@ -69,8 +69,10 @@ async function performCSSLogin(
  * @returns true if an error message is visible
  */
 async function hasLoginError(page: Page): Promise<boolean> {
-  const errorMessage = page.locator('text=/invalid|incorrect|error|failed/i');
-  return await errorMessage.isVisible().catch(() => false);
+  const errorMessage = page
+    .locator('[role="alert"], .error, .alert, .notification')
+    .filter({ hasText: /invalid|incorrect|credential|password|authentication|login failed/i });
+  return await errorMessage.first().isVisible().catch(() => false);
 }
 
 /**
