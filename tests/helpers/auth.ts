@@ -8,10 +8,76 @@ import {
 } from './constants';
 
 /**
+ * Navigate to the app login page and initiate OAuth flow
+ * 
+ * @param page - Playwright page object
+ * @returns true if redirected to CSS successfully
+ */
+async function initiateOAuthFlow(page: Page): Promise<boolean> {
+  // Navigate to login page
+  await page.goto('/login', { waitUntil: 'networkidle' });
+  
+  // Wait for the OIDC issuer input to be ready
+  await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: OAUTH_REDIRECT_TIMEOUT });
+  
+  // Fill in the local CSS issuer URL
+  await page.locator('#oidc-issuer').fill(LOCAL_CSS_ISSUER);
+  
+  // Click the "Next" button to initiate OAuth flow
+  await page.click('button[type="submit"]:has-text("Next")');
+  
+  // Wait for redirect to CSS login/authorize page
+  await page.waitForURL(/localhost:3001/, { timeout: CSS_LOGIN_TIMEOUT });
+  
+  // Wait for page to stabilize
+  await page.waitForLoadState('networkidle');
+  
+  return true;
+}
+
+/**
+ * Perform login on CSS login form
+ * 
+ * @param page - Playwright page object
+ * @param email - Email for login
+ * @param password - Password for login
+ * @returns true if login form was found and filled
+ */
+async function performCSSLogin(
+  page: Page,
+  email: string,
+  password: string
+): Promise<boolean> {
+  const emailInput = page.locator('input[name="email"]');
+  const isLoginFormVisible = await emailInput.isVisible().catch(() => false);
+  
+  if (isLoginFormVisible) {
+    await emailInput.fill(email);
+    await page.fill('input[name="password"]', password);
+    await page.click('button[type="submit"]');
+    await page.waitForLoadState('networkidle');
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Check if login failed with an error message
+ * 
+ * @param page - Playwright page object
+ * @returns true if an error message is visible
+ */
+async function hasLoginError(page: Page): Promise<boolean> {
+  const errorMessage = page.locator('text=/invalid|incorrect|error|failed/i');
+  return await errorMessage.isVisible().catch(() => false);
+}
+
+/**
  * Ensure a test account exists in the local CSS
  * 
- * This function checks if the test account can log in, and if not,
- * registers a new account with the test credentials.
+ * This function navigates to the CSS account registration page
+ * and creates a new account with the test credentials.
  * 
  * @param page - Playwright page object
  * @param email - Email for the account
@@ -22,17 +88,11 @@ async function ensureTestAccountExists(
   email: string = TEST_CREDENTIALS.email,
   password: string = TEST_CREDENTIALS.password
 ) {
-  // Navigate directly to the CSS registration page
-  await page.goto('http://localhost:3001/.account/', { waitUntil: 'networkidle' });
+  // Navigate directly to the CSS registration page using the constant
+  await page.goto(`${LOCAL_CSS_ISSUER}/.account/`, { waitUntil: 'networkidle' });
   
-  // Check if we're on an account page or need to register
-  const currentUrl = page.url();
-  
-  // If we can access the account page, check if we need to login or register
-  // CSS 8.x uses /.account/ as the main account management endpoint
-  
-  // Look for a "create account" or "register" link/button
-  const createAccountLink = page.locator('a:has-text("create"), a:has-text("register"), button:has-text("create"), button:has-text("register")').first();
+  // Look for a "create account" or "register" link/button (case-insensitive)
+  const createAccountLink = page.locator('a, button').filter({ hasText: /create|register/i }).first();
   const hasCreateOption = await createAccountLink.isVisible().catch(() => false);
   
   if (hasCreateOption) {
@@ -106,60 +166,23 @@ export async function loginToLocalCSS(
     await page.goto('/login', { waitUntil: 'networkidle' });
   }
   
-  // Wait for the OIDC issuer input to be ready
-  await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: OAUTH_REDIRECT_TIMEOUT });
+  // Initiate OAuth flow
+  await initiateOAuthFlow(page);
   
-  // Fill in the local CSS issuer URL
-  const issuerInput = page.locator('#oidc-issuer');
-  await issuerInput.fill(LOCAL_CSS_ISSUER);
+  // Perform login
+  const loginPerformed = await performCSSLogin(page, email, password);
   
-  // Click the "Next" button to initiate OAuth flow
-  await page.click('button[type="submit"]:has-text("Next")');
-  
-  // Wait for redirect to CSS login/authorize page
-  await page.waitForURL(/localhost:3001/, { timeout: CSS_LOGIN_TIMEOUT });
-  
-  // Wait for page to stabilize and check for login form
-  await page.waitForLoadState('networkidle');
-  
-  // Check if login form is present
-  const emailInput = page.locator('input[name="email"]');
-  const isLoginFormVisible = await emailInput.isVisible().catch(() => false);
-  
-  if (isLoginFormVisible) {
-    // Need to log in to CSS
-    await emailInput.fill(email);
-    await page.fill('input[name="password"]', password);
-    await page.click('button[type="submit"]');
-    
-    // Wait for either authorize page, error page, or redirect back to app
-    await page.waitForLoadState('networkidle');
-    
-    // Check if login failed (error message or still on login page)
-    const errorMessage = page.locator('text=/invalid|incorrect|error|failed/i');
-    const hasError = await errorMessage.isVisible().catch(() => false);
+  if (loginPerformed) {
+    // Check if login failed (error message visible)
+    const hasError = await hasLoginError(page);
     
     if (hasError) {
       // Login failed, need to register the account first
       await ensureTestAccountExists(page, email, password);
       
       // Retry login flow
-      await page.goto('/login', { waitUntil: 'networkidle' });
-      await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: OAUTH_REDIRECT_TIMEOUT });
-      await page.locator('#oidc-issuer').fill(LOCAL_CSS_ISSUER);
-      await page.click('button[type="submit"]:has-text("Next")');
-      await page.waitForURL(/localhost:3001/, { timeout: CSS_LOGIN_TIMEOUT });
-      await page.waitForLoadState('networkidle');
-      
-      // Try login again
-      const retryEmailInput = page.locator('input[name="email"]');
-      const retryLoginVisible = await retryEmailInput.isVisible().catch(() => false);
-      if (retryLoginVisible) {
-        await retryEmailInput.fill(email);
-        await page.fill('input[name="password"]', password);
-        await page.click('button[type="submit"]');
-        await page.waitForLoadState('networkidle');
-      }
+      await initiateOAuthFlow(page);
+      await performCSSLogin(page, email, password);
     }
   }
   
