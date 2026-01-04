@@ -185,6 +185,11 @@ export async function loginToLocalCSS(
       // Login failed, need to register the account first
       await ensureTestAccountExists(page, email, password);
       
+      // After registration, CSS typically leaves us on a confirmation/account page.
+      // Explicitly navigate back to the app login before restarting the OAuth flow
+      // so the page state is well-defined and not dependent on prior navigation.
+      await page.goto('http://localhost:3000/login', { waitUntil: 'networkidle' });
+      
       // Retry login flow
       await initiateOAuthFlow(page);
       await performCSSLogin(page, email, password);
