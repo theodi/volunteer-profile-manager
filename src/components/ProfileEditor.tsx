@@ -192,6 +192,13 @@ export default function ProfileEditor() {
   const [requirements, setRequirements] = useState<string[]>([]);
   const [causes, setCauses] = useState<string[]>([]);
 
+  // Determine if the profile is still loading
+  const isProfileLoading = !profileResource || 
+    (profileResource.status.type !== "dataReadSuccess" && 
+     profileResource.status.type !== "containerReadSuccess" &&
+     profileResource.status.type !== "absentReadSuccess" &&
+     profileResource.status.type !== "serverError");
+
   // Initialize local state from profile when loaded
   useEffect(() => {
     const isReady = profileResource?.status.type === "dataReadSuccess" || 
@@ -524,6 +531,7 @@ export default function ProfileEditor() {
               <LocationEditor
                 locations={locations}
                 onChange={setLocations}
+                isLoading={isProfileLoading}
               />
             )}
             {activeTab === "time" && (
