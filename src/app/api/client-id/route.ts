@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const clientIdDocument = {
     "@context": "https://www.w3.org/ns/solid/oidc-context.jsonld",
     "client_id": `${origin}/api/client-id`,
-    "redirect_uris": [`${origin}/`],
+    "redirect_uris": [`${origin}/login`],
     "post_logout_redirect_uris": [`${origin}/`],
     "client_name": "Volunteer Profile Editor",
     "client_uri": origin,
