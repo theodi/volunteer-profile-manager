@@ -67,4 +67,42 @@ test.describe('Smoke Tests', () => {
     const nextButton = page.getByRole('button', { name: /next/i });
     await expect(nextButton).toBeEnabled();
   });
+
+  test('should accept URL without https:// prefix', async ({ page }) => {
+    await page.goto('/login');
+    
+    // Fill in a URL without https:// prefix
+    await page.fill('#oidc-issuer', 'solidcommunity.net');
+    
+    // Click Next button to trigger validation
+    const nextButton = page.getByRole('button', { name: /next/i });
+    await nextButton.click();
+    
+    // Should not show an error message about invalid URL
+    // The error message would be visible if the URL was rejected
+    const errorMessage = page.locator('text=/please enter a valid url/i');
+    await expect(errorMessage).not.toBeVisible();
+    
+    // The button should be in loading state (showing "Signing in...")
+    // indicating that the URL was accepted and login is being attempted
+    await expect(page.getByText(/signing in/i)).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should accept URL with http:// prefix', async ({ page }) => {
+    await page.goto('/login');
+    
+    // Fill in a URL with explicit http:// prefix (like local dev server)
+    await page.fill('#oidc-issuer', 'http://localhost:3001');
+    
+    // Click Next button to trigger validation
+    const nextButton = page.getByRole('button', { name: /next/i });
+    await nextButton.click();
+    
+    // Should not show an error message about invalid URL
+    const errorMessage = page.locator('text=/please enter a valid url/i');
+    await expect(errorMessage).not.toBeVisible();
+    
+    // The button should be in loading state
+    await expect(page.getByText(/signing in/i)).toBeVisible({ timeout: 3000 });
+  });
 });
