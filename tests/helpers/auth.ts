@@ -252,30 +252,42 @@ export async function loginToLocalCSS(
   for (let attempt = 0; attempt < maxConsentAttempts; attempt++) {
     await page.waitForLoadState('networkidle');
     
-    // Check if we're already at the app
-    if (page.url().startsWith('http://localhost:3000')) {
+    const currentUrl = page.url();
+    
+    // Check if we're already at the app (either home or callback with code)
+    if (currentUrl.startsWith('http://localhost:3000')) {
       break;
     }
     
-    // Check if we're on a consent page (URL contains 'consent' or 'authorize')
-    const consentPageUrl = page.url();
-    if (consentPageUrl.includes('consent') || consentPageUrl.includes('authorize')) {
+    // Check if we're on a consent page at CSS (URL path contains 'consent')
+    // Only try to click authorize if we're still on the CSS server
+    if (currentUrl.startsWith('http://localhost:3001') && 
+        (currentUrl.includes('/consent') || currentUrl.includes('/authorize'))) {
       // Look for consent/authorize button with proper waiting
       const authorizeButton = page.locator('button:has-text("Authorize"), button:has-text("Allow"), button:has-text("Consent"), button[type="submit"]').first();
-      await expect(authorizeButton).toBeVisible({ timeout: 5000 });
-      await authorizeButton.click();
-      await page.waitForLoadState('networkidle');
+      const isVisible = await authorizeButton.isVisible().catch(() => false);
+      if (isVisible) {
+        await authorizeButton.click();
+        await page.waitForLoadState('networkidle');
+      }
     }
     
     // Wait a moment for any pending navigation
     await page.waitForTimeout(500);
   }
   
-  // Wait for redirect back to the app
-  await page.waitForURL('http://localhost:3000/', { timeout: AUTH_FLOW_TIMEOUT });
+  // Wait for redirect back to the app - use a pattern that matches both / and /login?code=...
+  await page.waitForURL(/http:\/\/localhost:3000/, { timeout: AUTH_FLOW_TIMEOUT });
   
   // Wait for authentication to complete by checking for profile page elements
   await page.waitForLoadState('networkidle');
+  
+  // If we're on the callback URL with code, wait for it to process
+  if (page.url().includes('/login?code=')) {
+    // Wait for the app to process the OAuth callback and redirect to home
+    await page.waitForURL('http://localhost:3000/', { timeout: AUTH_FLOW_TIMEOUT });
+    await page.waitForLoadState('networkidle');
+  }
   
   // Verify logged in by checking for the profile editor heading
   const profileHeading = page.getByRole('heading', { name: /volunteer profile/i });
