@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     "post_logout_redirect_uris": [`${origin}/`],
     "client_name": "Volunteer Profile Editor",
     "client_uri": origin,
+    "logo_uri": `${origin}/icon.svg`,
     "scope": "openid webid offline_access",
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code"],
