@@ -161,6 +161,9 @@ export default function ProfileEditor() {
         return;
       }
 
+      // Clear any previous error messages when attempting discovery
+      setSaveMessage(null);
+
       try {
         // Discover all storage locations linked from the WebID
         const podUrls = await getPodUrlAll(session.webId, { fetch: solidFetch });
@@ -168,7 +171,9 @@ export default function ProfileEditor() {
         if (podUrls.length > 0) {
           // Use the first storage location and append 'volunteer/profile'
           const firstPodUrl = podUrls[0];
-          const volunteerProfileUri = new URL("volunteer/profile", firstPodUrl).href;
+          // Ensure the pod URL ends with a slash for proper URL construction
+          const normalizedPodUrl = firstPodUrl.endsWith('/') ? firstPodUrl : `${firstPodUrl}/`;
+          const volunteerProfileUri = new URL("volunteer/profile", normalizedPodUrl).href;
           setProfileUri(volunteerProfileUri);
         } else {
           console.error("No storage found for WebID:", session.webId);
@@ -187,7 +192,7 @@ export default function ProfileEditor() {
     }
 
     discoverStorage();
-  }, [session.webId, solidFetch]);
+  }, [session.webId, solidFetch, setSaveMessage]);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
