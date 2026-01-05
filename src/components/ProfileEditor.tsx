@@ -161,9 +161,6 @@ export default function ProfileEditor() {
         return;
       }
 
-      // Clear any previous error messages when attempting discovery
-      setSaveMessage(null);
-
       try {
         // Discover all storage locations linked from the WebID
         const podUrls = await getPodUrlAll(session.webId, { fetch: solidFetch });
@@ -192,7 +189,7 @@ export default function ProfileEditor() {
     }
 
     discoverStorage();
-  }, [session.webId, solidFetch, setSaveMessage]);
+  }, [session.webId, solidFetch]);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
