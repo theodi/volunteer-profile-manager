@@ -143,7 +143,7 @@ export const TIMES_OF_DAY = [
 ];
 
 export default function ProfileEditor() {
-  const { session, logout } = useSolidAuth();
+  const { session, logout, fetch: solidFetch } = useSolidAuth();
   const { createData, commitData } = useLdo();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
@@ -156,14 +156,14 @@ export default function ProfileEditor() {
   // Discover storage from WebID and construct profile URI
   useEffect(() => {
     async function discoverStorage() {
-      if (!session.webId || !session.fetch) {
+      if (!session.webId || !solidFetch) {
         setProfileUri(undefined);
         return;
       }
 
       try {
         // Discover all storage locations linked from the WebID
-        const podUrls = await getPodUrlAll(session.webId, { fetch: session.fetch });
+        const podUrls = await getPodUrlAll(session.webId, { fetch: solidFetch });
         
         if (podUrls.length > 0) {
           // Use the first storage location and append 'volunteer/profile'
@@ -187,7 +187,7 @@ export default function ProfileEditor() {
     }
 
     discoverStorage();
-  }, [session.webId, session.fetch]);
+  }, [session.webId, solidFetch]);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
