@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginToLocalCSS, logout } from './helpers/auth';
+import { loginToLocalCSS, logout, waitForProfileLoaded } from './helpers/auth';
 import { SAVE_OPERATION_TIMEOUT, EDITOR_LOAD_TIMEOUT } from './helpers/constants';
 
 /**
@@ -17,6 +17,9 @@ test.describe('Location Editor', () => {
     
     // Step 1: Login and add a location using postcode search (not geolocation)
     await loginToLocalCSS(page);
+    
+    // Wait for profile to finish loading from the pod
+    await waitForProfileLoaded(page);
     
     // Navigate to Location tab
     await page.getByRole('button', { name: '📍Location' }).click();
@@ -47,7 +50,7 @@ test.describe('Location Editor', () => {
     
     // Save the profile
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+    await expect(page.getByText('Profile saved successfully!')).toBeVisible({ 
       timeout: SAVE_OPERATION_TIMEOUT 
     });
     
@@ -68,6 +71,9 @@ test.describe('Location Editor', () => {
     
     // Step 4: Login again
     await loginToLocalCSS(page);
+    
+    // Wait for profile to finish loading from the pod
+    await waitForProfileLoaded(page);
     
     // Navigate to Location tab
     await page.getByRole('button', { name: '📍Location' }).click();
@@ -107,6 +113,9 @@ test.describe('Location Editor', () => {
     // First login and add location via postcode, then save
     await loginToLocalCSS(page);
     
+    // Wait for profile to finish loading from the pod
+    await waitForProfileLoaded(page);
+    
     await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(EDITOR_LOAD_TIMEOUT);
@@ -125,7 +134,7 @@ test.describe('Location Editor', () => {
     
     // Save
     await page.getByRole('button', { name: /save/i }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
+    await expect(page.getByText('Profile saved successfully!')).toBeVisible({ timeout: SAVE_OPERATION_TIMEOUT });
     
     // Now check geolocation call count before clicking "Use my location"
     const callCountBefore = await page.evaluate(() => {
@@ -153,6 +162,9 @@ test.describe('Location Editor', () => {
     // Step 1: Login to local CSS
     await loginToLocalCSS(page);
     
+    // Wait for profile to finish loading from the pod
+    await waitForProfileLoaded(page);
+    
     // Step 2: Navigate to Location tab (should be default)
     const locationTab = page.getByRole('button', { name: '📍Location' });
     await expect(locationTab).toBeVisible();
@@ -178,6 +190,9 @@ test.describe('Location Editor', () => {
 
   test('should allow searching for location by postcode', async ({ page }) => {
     await loginToLocalCSS(page);
+    
+    // Wait for profile to finish loading from the pod
+    await waitForProfileLoaded(page);
     
     // Navigate to Location tab
     await page.getByRole('button', { name: '📍Location' }).click();
@@ -207,6 +222,9 @@ test.describe('Location Editor', () => {
   test('should persist location data after logout/login', async ({ page }) => {
     await loginToLocalCSS(page);
     
+    // Wait for profile to finish loading from the pod
+    await waitForProfileLoaded(page);
+    
     // Navigate to Location tab
     await page.getByRole('button', { name: '📍Location' }).click();
     await page.waitForLoadState('networkidle');
@@ -228,13 +246,16 @@ test.describe('Location Editor', () => {
       
       // Save the profile
       await page.getByRole('button', { name: /save/i }).click();
-      await expect(page.getByText(/saved successfully/i)).toBeVisible({ 
+      await expect(page.getByText('Profile saved successfully!')).toBeVisible({ 
         timeout: SAVE_OPERATION_TIMEOUT 
       });
       
       // Logout and login
       await logout(page);
       await loginToLocalCSS(page);
+      
+      // Wait for profile to finish loading from the pod
+      await waitForProfileLoaded(page);
       
       // Navigate back to Location tab
       await page.getByRole('button', { name: '📍Location' }).click();

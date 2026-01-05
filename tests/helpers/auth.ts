@@ -4,7 +4,8 @@ import {
   LOCAL_CSS_ISSUER, 
   AUTH_FLOW_TIMEOUT,
   CSS_LOGIN_TIMEOUT,
-  OAUTH_REDIRECT_TIMEOUT 
+  OAUTH_REDIRECT_TIMEOUT,
+  PROFILE_LOAD_TIMEOUT
 } from './constants';
 
 /**
@@ -15,7 +16,7 @@ import {
  */
 async function initiateOAuthFlow(page: Page): Promise<boolean> {
   // Navigate to login page
-  await page.goto('/login', { waitUntil: 'networkidle' });
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   
   // Wait for the OIDC issuer input to be ready
   await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: OAUTH_REDIRECT_TIMEOUT });
@@ -30,7 +31,7 @@ async function initiateOAuthFlow(page: Page): Promise<boolean> {
   await page.waitForURL(/localhost:3001/, { timeout: CSS_LOGIN_TIMEOUT });
   
   // Wait for page to stabilize
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   
   return true;
 }
@@ -48,14 +49,15 @@ async function performCSSLogin(
   email: string,
   password: string
 ): Promise<boolean> {
-  const emailInput = page.locator('input[name="email"]');
-  const isLoginFormVisible = await emailInput.isVisible().catch(() => false);
+  // Wait for the login form to be visible - use a more robust selector
+  const emailInput = page.getByRole('textbox', { name: 'Email' });
+  const isLoginFormVisible = await emailInput.isVisible({ timeout: 5000 }).catch(() => false);
   
   if (isLoginFormVisible) {
     await emailInput.fill(email);
-    await page.fill('input[name="password"]', password);
-    await page.click('button[type="submit"]');
-    await page.waitForLoadState('networkidle');
+    await page.getByRole('textbox', { name: 'Password' }).fill(password);
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await page.waitForLoadState('domcontentloaded');
     return true;
   }
   
@@ -91,7 +93,7 @@ async function ensureTestAccountExists(
   password: string = TEST_CREDENTIALS.password
 ) {
   // Navigate directly to the CSS registration page using the constant
-  await page.goto(`${LOCAL_CSS_ISSUER}/.account/`, { waitUntil: 'networkidle' });
+  await page.goto(`${LOCAL_CSS_ISSUER}/.account/`, { waitUntil: 'domcontentloaded' });
   
   // Look for a "create account" or "register" link/button (case-insensitive)
   const createAccountLink = page.locator('a, button').filter({ hasText: /create|register/i }).first();
@@ -100,7 +102,7 @@ async function ensureTestAccountExists(
   if (hasCreateOption) {
     // Click to go to registration
     await createAccountLink.click();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   }
   
   // Check if we're on a registration form
@@ -128,7 +130,7 @@ async function ensureTestAccountExists(
     await submitButton.click();
     
     // Wait for registration to complete
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     
     // After submission, verify that registration either succeeded or the account already exists.
     // This makes the registration fallback more robust and avoids silently continuing on failure.
@@ -190,8 +192,8 @@ export async function loginToLocalCSS(
   email: string = TEST_CREDENTIALS.email,
   password: string = TEST_CREDENTIALS.password
 ) {
-  // Navigate to the app and wait for initial load
-  await page.goto('/', { waitUntil: 'networkidle' });
+  // Navigate to the app and wait for initial load (don't use domcontentloaded as LDO may maintain connections)
+  await page.goto('/');
   
   // Wait for either login page or profile page to appear
   try {
@@ -208,7 +210,7 @@ export async function loginToLocalCSS(
   // Navigate to login page if not already there
   const currentUrl = page.url();
   if (!currentUrl.includes('/login')) {
-    await page.goto('/login', { waitUntil: 'networkidle' });
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
   }
   
   // Initiate OAuth flow
@@ -231,7 +233,7 @@ export async function loginToLocalCSS(
       // After registration, CSS typically leaves us on a confirmation/account page.
       // Explicitly navigate back to the app login before restarting the OAuth flow
       // so the page state is well-defined and not dependent on prior navigation.
-      await page.goto('http://localhost:3000/login', { waitUntil: 'networkidle' });
+      await page.goto('http://localhost:3000/login', { waitUntil: 'domcontentloaded' });
       
       // Retry login flow
       await initiateOAuthFlow(page);
@@ -248,9 +250,9 @@ export async function loginToLocalCSS(
   // Wait for either consent page or redirect back to app
   // The CSS OAuth flow may show a consent/authorize page
   // We need to handle this in a loop since navigation happens asynchronously
-  const maxConsentAttempts = 3;
+  const maxConsentAttempts = 5;
   for (let attempt = 0; attempt < maxConsentAttempts; attempt++) {
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     
     const currentUrl = page.url();
     
@@ -259,16 +261,32 @@ export async function loginToLocalCSS(
       break;
     }
     
-    // Check if we're on a consent page at CSS (URL path contains 'consent')
-    // Only try to click authorize if we're still on the CSS server
-    if (currentUrl.startsWith('http://localhost:3001') && 
-        (currentUrl.includes('/consent') || currentUrl.includes('/authorize'))) {
-      // Look for consent/authorize button with proper waiting
-      const authorizeButton = page.locator('button:has-text("Authorize"), button:has-text("Allow"), button:has-text("Consent"), button[type="submit"]').first();
+    // Check if we're on the CSS server - could be consent, auth, or oidc page
+    // CSS uses various paths: /consent, /authorize, /.oidc/auth/*, etc.
+    if (currentUrl.startsWith('http://localhost:3001')) {
+      // Look for the Authorize button on any CSS page
+      // The button may have text "Authorize", "Allow", "Consent", or just be a submit button
+      const authorizeButton = page.locator('button').filter({ hasText: /^Authorize$|^Allow$|^Consent$/i }).first();
       const isVisible = await authorizeButton.isVisible().catch(() => false);
       if (isVisible) {
         await authorizeButton.click();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        continue; // Check if we need to authorize again or if we're done
+      }
+      
+      // Also check for a WebID selection page (CSS shows this for consent)
+      // Look for "An application is requesting access" heading
+      const requestingAccessHeading = page.locator('h1').filter({ hasText: /requesting access/i });
+      const hasRequestingAccess = await requestingAccessHeading.isVisible().catch(() => false);
+      if (hasRequestingAccess) {
+        // Click Authorize button if present
+        const authBtn = page.getByRole('button', { name: 'Authorize' });
+        const authVisible = await authBtn.isVisible().catch(() => false);
+        if (authVisible) {
+          await authBtn.click();
+          await page.waitForLoadState('domcontentloaded');
+          continue;
+        }
       }
     }
     
@@ -279,17 +297,14 @@ export async function loginToLocalCSS(
   // Wait for redirect back to the app - use a pattern that matches both / and /login?code=...
   await page.waitForURL(/http:\/\/localhost:3000/, { timeout: AUTH_FLOW_TIMEOUT });
   
-  // Wait for authentication to complete by checking for profile page elements
-  await page.waitForLoadState('networkidle');
-  
   // If we're on the callback URL with code, wait for it to process
   if (page.url().includes('/login?code=')) {
     // Wait for the app to process the OAuth callback and redirect to home
     await page.waitForURL('http://localhost:3000/', { timeout: AUTH_FLOW_TIMEOUT });
-    await page.waitForLoadState('networkidle');
   }
   
   // Verify logged in by checking for the profile editor heading
+  // This is more reliable than domcontentloaded which can timeout with persistent connections
   const profileHeading = page.getByRole('heading', { name: /volunteer profile/i });
   await expect(profileHeading).toBeVisible({ timeout: OAUTH_REDIRECT_TIMEOUT });
 }
@@ -317,4 +332,27 @@ export async function logout(page: Page) {
   
   // Verify we're on login page by waiting for the issuer input
   await page.waitForSelector('#oidc-issuer', { state: 'visible', timeout: 5000 });
+}
+
+/**
+ * Wait for the profile to finish loading from the pod
+ * 
+ * The profile editor shows "Loading profile..." while fetching data.
+ * This function waits for the loading to complete by waiting for
+ * the save button to become visible, which indicates the UI is ready.
+ * 
+ * Note: We don't use domcontentloaded as LDO may maintain persistent connections.
+ * 
+ * For new users, the profile resource may be absent, which is also a valid state.
+ * 
+ * @param page - Playwright page object
+ */
+export async function waitForProfileLoaded(page: Page) {
+  // Wait for the Save Profile button to be visible, which indicates the UI is ready
+  await expect(page.getByRole('button', { name: /save/i })).toBeVisible({ 
+    timeout: PROFILE_LOAD_TIMEOUT 
+  });
+  
+  // Give an extra moment for the React state to update
+  await page.waitForTimeout(1000);
 }

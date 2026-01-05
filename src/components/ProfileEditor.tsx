@@ -123,26 +123,26 @@ export const CAUSES = [
   { id: "HumanRights", label: "Human Rights", category: "International" },
 ];
 
-// Days of week from W3C Time Ontology (using full URIs as stored in RDF)
+// Days of week - using short names that match LDO context (context expands to full URIs)
 export const DAYS_OF_WEEK = [
-  { id: "http://www.w3.org/2006/time#Monday", label: "Monday" },
-  { id: "http://www.w3.org/2006/time#Tuesday", label: "Tuesday" },
-  { id: "http://www.w3.org/2006/time#Wednesday", label: "Wednesday" },
-  { id: "http://www.w3.org/2006/time#Thursday", label: "Thursday" },
-  { id: "http://www.w3.org/2006/time#Friday", label: "Friday" },
-  { id: "http://www.w3.org/2006/time#Saturday", label: "Saturday" },
-  { id: "http://www.w3.org/2006/time#Sunday", label: "Sunday" },
+  { id: "Monday", label: "Monday" },
+  { id: "Tuesday", label: "Tuesday" },
+  { id: "Wednesday", label: "Wednesday" },
+  { id: "Thursday", label: "Thursday" },
+  { id: "Friday", label: "Friday" },
+  { id: "Saturday", label: "Saturday" },
+  { id: "Sunday", label: "Sunday" },
 ];
 
-// Times of day (using full URIs as stored in RDF)
+// Times of day - using short names that match LDO context (context expands to full URIs)
 export const TIMES_OF_DAY = [
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Morning", label: "Morning" },
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Afternoon", label: "Afternoon" },
-  { id: "https://id.volunteeringdata.io/volunteer-profile/Evening", label: "Evening" },
+  { id: "Morning", label: "Morning" },
+  { id: "Afternoon", label: "Afternoon" },
+  { id: "Evening", label: "Evening" },
 ];
 
 export default function ProfileEditor() {
-  const { session, logout } = useSolidAuth();
+  const { session, logout, ranInitialAuthCheck } = useSolidAuth();
   const { createData, commitData } = useLdo();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
@@ -151,8 +151,9 @@ export default function ProfileEditor() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Derive the profile URI from the WebID
-  const profileUri = session.webId
+  // Derive the profile URI from the WebID - only when session is fully ready and logged in
+  // This prevents unauthenticated fetches during session initialization
+  const profileUri = (session.webId && session.isLoggedIn && ranInitialAuthCheck)
     ? session.webId.replace(/\/profile\/card#me$/, "/volunteer/profile")
     : undefined;
 
@@ -160,8 +161,9 @@ export default function ProfileEditor() {
   const profileResource = useResource(profileUri);
   const profile = useSubject(VolunteerProfileShapeType, profileUri);
 
-  // Load the WebID profile using LDO
-  const webIdResource = useResource(session.webId?.split('#')[0]);
+  // Load the WebID profile using LDO - only when session is fully ready and logged in
+  const webIdDocUri = (session.webId && session.isLoggedIn && ranInitialAuthCheck) ? session.webId.split('#')[0] : undefined;
+  const webIdResource = useResource(webIdDocUri);
   const webIdProfile = useSubject(WebIdProfileShapeType, session.webId);
 
   // Derive user profile info from WebID card
@@ -192,11 +194,9 @@ export default function ProfileEditor() {
   const [requirements, setRequirements] = useState<string[]>([]);
   const [causes, setCauses] = useState<string[]>([]);
 
-  // Determine if the profile is still loading
-  const isProfileLoading = !profileResource || 
-    (profileResource.status.type !== "dataReadSuccess" && 
-     profileResource.status.type !== "containerReadSuccess" &&
-     profileResource.status.type !== "absentReadSuccess");
+  // Determine if the profile is still loading - true when session isn't ready yet or resource is unfetched
+  const isProfileLoading = !ranInitialAuthCheck || !profileResource || 
+    profileResource.status.type === "unfetched";
 
   // Initialize local state from profile when loaded
   useEffect(() => {
@@ -254,10 +254,14 @@ export default function ProfileEditor() {
   const handleSave = useCallback(async () => {
     if (!profileUri || !session.webId || !profileResource) return;
 
-    // Type guard for valid resource
-    if (profileResource.status.type !== "dataReadSuccess" && 
-        profileResource.status.type !== "containerReadSuccess" &&
-        profileResource.status.type !== "absentReadSuccess") {
+    // Type guard for valid resource - allow any fetched state
+    // Valid states: dataReadSuccess, containerReadSuccess, absentReadSuccess
+    // Also allow saving if we have data loaded (status might be in other states)
+    const validStatuses = ["dataReadSuccess", "containerReadSuccess", "absentReadSuccess"];
+    if (!validStatuses.includes(profileResource.status.type)) {
+      console.warn("ProfileEditor: Cannot save - resource status:", profileResource.status.type);
+      // If the resource exists but isn't in expected state, show error
+      setSaveMessage({ type: "error", text: `Cannot save: resource status is ${profileResource.status.type}` });
       return;
     }
 
@@ -494,11 +498,9 @@ export default function ProfileEditor() {
           </div>
         )}
 
-        {/* Loading state */}
+        {/* Loading state - only show when resource is actually being fetched */}
         {profileResource && 
-         profileResource.status.type !== "dataReadSuccess" && 
-         profileResource.status.type !== "containerReadSuccess" && 
-         profileResource.status.type !== "serverError" && (
+         profileResource.status.type === "unfetched" && (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading profile...</p>

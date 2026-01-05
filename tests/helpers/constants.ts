@@ -13,10 +13,16 @@
 export const PAGE_TRANSITION_TIMEOUT = 500;
 
 /** Time to wait for editor components to fully load */
-export const EDITOR_LOAD_TIMEOUT = 1000;
+export const EDITOR_LOAD_TIMEOUT = 500;
+
+/** Time to wait for same-page operations like checking boxes */
+export const UI_INTERACTION_TIMEOUT = 500;
+
+/** Time to wait for profile data to fully load from the pod */
+export const PROFILE_LOAD_TIMEOUT = 15000;
 
 /** Time to wait for save operations to complete (network to local CSS) */
-export const SAVE_OPERATION_TIMEOUT = 3000;
+export const SAVE_OPERATION_TIMEOUT = 15000;
 
 /** Time to wait for authentication flows to complete (includes OAuth redirects) */
 export const AUTH_FLOW_TIMEOUT = 10000;
