@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSolidAuth, useLdo, useSubject, useResource } from "@ldo/solid-react";
 import { useRouter } from "next/navigation";
+import { getPodUrlAll } from "@inrupt/solid-client";
 import { VolunteerProfileShapeType } from "@/ldo/volunteer.shapeTypes";
 import { WebIdProfileShapeType } from "@/ldo/profile.shapeTypes";
 import type { VolunteerProfile, PreferredLocation, PreferredTime, Point } from "@/ldo/volunteer.typings";
@@ -150,11 +151,43 @@ export default function ProfileEditor() {
   const [activeTab, setActiveTab] = useState<"location" | "time" | "skills" | "causes">("location");
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [profileUri, setProfileUri] = useState<string | undefined>(undefined);
 
-  // Derive the profile URI from the WebID
-  const profileUri = session.webId
-    ? session.webId.replace(/\/profile\/card#me$/, "/volunteer/profile")
-    : undefined;
+  // Discover storage from WebID and construct profile URI
+  useEffect(() => {
+    async function discoverStorage() {
+      if (!session.webId || !session.fetch) {
+        setProfileUri(undefined);
+        return;
+      }
+
+      try {
+        // Discover all storage locations linked from the WebID
+        const podUrls = await getPodUrlAll(session.webId, { fetch: session.fetch });
+        
+        if (podUrls.length > 0) {
+          // Use the first storage location and append 'volunteer/profile'
+          const firstPodUrl = podUrls[0];
+          const volunteerProfileUri = new URL("volunteer/profile", firstPodUrl).href;
+          setProfileUri(volunteerProfileUri);
+        } else {
+          console.error("No storage found for WebID:", session.webId);
+          setSaveMessage({
+            type: "error",
+            text: "No storage found for your WebID. Please check your profile configuration.",
+          });
+        }
+      } catch (error) {
+        console.error("Error discovering storage:", error);
+        setSaveMessage({
+          type: "error",
+          text: "Failed to discover storage location. Please try again.",
+        });
+      }
+    }
+
+    discoverStorage();
+  }, [session.webId, session.fetch]);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
