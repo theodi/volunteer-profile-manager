@@ -189,6 +189,22 @@ export default function ProfileEditor() {
   const [showStorageSelector, setShowStorageSelector] = useState(false);
   const [selectedStorage, setSelectedStorage] = useState<string | null>(null);
 
+  // Function to select a storage and construct the profile URI
+  const selectStorage = useCallback((storageUrl: string) => {
+    if (!session.webId) return;
+    
+    // Normalize the storage URL
+    const normalizedStorageUrl = storageUrl.endsWith('/') ? storageUrl : `${storageUrl}/`;
+    const volunteerProfileUri = new URL("volunteer/profile", normalizedStorageUrl).href;
+    
+    setSelectedStorage(storageUrl);
+    setProfileUri(volunteerProfileUri);
+    setShowStorageSelector(false);
+    
+    // Save the preference
+    saveStoragePreference(session.webId, storageUrl);
+  }, [session.webId]);
+
   // Discover storage from WebID and construct profile URI
   useEffect(() => {
     async function discoverStorage() {
@@ -237,23 +253,7 @@ export default function ProfileEditor() {
     }
 
     discoverStorage();
-  }, [session.webId, solidFetch]);
-
-  // Function to select a storage and construct the profile URI
-  const selectStorage = useCallback((storageUrl: string) => {
-    if (!session.webId) return;
-    
-    // Normalize the storage URL
-    const normalizedStorageUrl = storageUrl.endsWith('/') ? storageUrl : `${storageUrl}/`;
-    const volunteerProfileUri = new URL("volunteer/profile", normalizedStorageUrl).href;
-    
-    setSelectedStorage(storageUrl);
-    setProfileUri(volunteerProfileUri);
-    setShowStorageSelector(false);
-    
-    // Save the preference
-    saveStoragePreference(session.webId, storageUrl);
-  }, [session.webId]);
+  }, [session.webId, solidFetch, selectStorage]);
 
   // Handler for when user selects a storage from the UI
   const handleStorageSelect = useCallback((storageUrl: string) => {
