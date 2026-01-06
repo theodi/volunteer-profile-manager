@@ -142,6 +142,37 @@ export const TIMES_OF_DAY = [
   { id: "https://id.volunteeringdata.io/volunteer-profile/Evening", label: "Evening" },
 ];
 
+// LocalStorage key for storing user's preferred storage
+const STORAGE_PREFERENCE_KEY = "volunteer-profile-selected-storage";
+
+// Get stored storage preference for a specific WebID
+function getStoredStoragePreference(webId: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(STORAGE_PREFERENCE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed[webId] || null;
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+  return null;
+}
+
+// Save storage preference for a specific WebID
+function saveStoragePreference(webId: string, storageUrl: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = localStorage.getItem(STORAGE_PREFERENCE_KEY);
+    const existing = stored ? JSON.parse(stored) : {};
+    existing[webId] = storageUrl;
+    localStorage.setItem(STORAGE_PREFERENCE_KEY, JSON.stringify(existing));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export default function ProfileEditor() {
   const { session, logout, fetch: solidFetch } = useSolidAuth();
   const { createData, commitData } = useLdo();
@@ -152,12 +183,19 @@ export default function ProfileEditor() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [profileUri, setProfileUri] = useState<string | undefined>(undefined);
+  
+  // Storage selection state
+  const [availableStorages, setAvailableStorages] = useState<string[]>([]);
+  const [showStorageSelector, setShowStorageSelector] = useState(false);
+  const [selectedStorage, setSelectedStorage] = useState<string | null>(null);
 
   // Discover storage from WebID and construct profile URI
   useEffect(() => {
     async function discoverStorage() {
       if (!session.webId || !solidFetch) {
         setProfileUri(undefined);
+        setAvailableStorages([]);
+        setShowStorageSelector(false);
         return;
       }
 
@@ -165,19 +203,29 @@ export default function ProfileEditor() {
         // Discover all storage locations linked from the WebID
         const podUrls = await getPodUrlAll(session.webId, { fetch: solidFetch });
         
-        if (podUrls.length > 0) {
-          // Use the first storage location and append 'volunteer/profile'
-          const firstPodUrl = podUrls[0];
-          // Ensure the pod URL ends with a slash for proper URL construction
-          const normalizedPodUrl = firstPodUrl.endsWith('/') ? firstPodUrl : `${firstPodUrl}/`;
-          const volunteerProfileUri = new URL("volunteer/profile", normalizedPodUrl).href;
-          setProfileUri(volunteerProfileUri);
-        } else {
+        if (podUrls.length === 0) {
           console.error("No storage found for WebID:", session.webId);
           setSaveMessage({
             type: "error",
             text: "No storage found for your WebID. Please check your profile configuration.",
           });
+          return;
+        }
+        
+        setAvailableStorages(podUrls);
+        
+        // Check for a previously saved preference
+        const storedPreference = getStoredStoragePreference(session.webId);
+        
+        if (storedPreference && podUrls.includes(storedPreference)) {
+          // Use the stored preference if it's still available
+          selectStorage(storedPreference);
+        } else if (podUrls.length === 1) {
+          // Only one storage available, use it automatically
+          selectStorage(podUrls[0]);
+        } else {
+          // Multiple storages available, show the selector
+          setShowStorageSelector(true);
         }
       } catch (error) {
         console.error("Error discovering storage:", error);
@@ -190,6 +238,34 @@ export default function ProfileEditor() {
 
     discoverStorage();
   }, [session.webId, solidFetch]);
+
+  // Function to select a storage and construct the profile URI
+  const selectStorage = useCallback((storageUrl: string) => {
+    if (!session.webId) return;
+    
+    // Normalize the storage URL
+    const normalizedStorageUrl = storageUrl.endsWith('/') ? storageUrl : `${storageUrl}/`;
+    const volunteerProfileUri = new URL("volunteer/profile", normalizedStorageUrl).href;
+    
+    setSelectedStorage(storageUrl);
+    setProfileUri(volunteerProfileUri);
+    setShowStorageSelector(false);
+    
+    // Save the preference
+    saveStoragePreference(session.webId, storageUrl);
+  }, [session.webId]);
+
+  // Handler for when user selects a storage from the UI
+  const handleStorageSelect = useCallback((storageUrl: string) => {
+    selectStorage(storageUrl);
+  }, [selectStorage]);
+
+  // Handler to open storage selector (for changing storage later)
+  const handleChangeStorage = useCallback(() => {
+    if (availableStorages.length > 1) {
+      setShowStorageSelector(true);
+    }
+  }, [availableStorages.length]);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
@@ -381,6 +457,86 @@ export default function ProfileEditor() {
     return null;
   }
 
+  // Show storage selector when user has multiple storages and hasn't selected one yet
+  if (showStorageSelector && availableStorages.length > 1) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-md w-full p-6">
+          <div className="text-center mb-6">
+            <svg
+              className="w-12 h-12 mx-auto text-purple-600 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              />
+            </svg>
+            <h2 className="text-xl font-semibold text-gray-900">Select Storage Location</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              You have multiple storage locations available. Please select where you would like to store your volunteer profile.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {availableStorages.map((storageUrl, index) => (
+              <button
+                key={storageUrl}
+                onClick={() => handleStorageSelect(storageUrl)}
+                className="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                    <svg
+                      className="w-5 h-5 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">Storage {index + 1}</p>
+                    <p className="text-xs text-gray-500 truncate" title={storageUrl}>
+                      {storageUrl}
+                    </p>
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs text-gray-500 mt-4 text-center">
+            Your selection will be remembered for future visits.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const tabs = [
     { id: "location" as const, label: "Location", icon: "📍" },
     { id: "time" as const, label: "Availability", icon: "🕐" },
@@ -483,8 +639,45 @@ export default function ProfileEditor() {
                   </div>
                 </div>
 
-                {/* Sign out button */}
+                {/* Storage info section - only show when multiple storages available */}
+                {availableStorages.length > 1 && selectedStorage && (
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Current storage:</p>
+                    <p className="text-xs text-gray-700 truncate" title={selectedStorage}>
+                      {selectedStorage}
+                    </p>
+                  </div>
+                )}
+
+                {/* Menu items */}
                 <div className="px-2 py-1">
+                  {/* Change storage button - only show when multiple storages available */}
+                  {availableStorages.length > 1 && (
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        handleChangeStorage();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      <svg
+                        className="w-4 h-4 text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                        />
+                      </svg>
+                      Change storage
+                    </button>
+                  )}
+                  
+                  {/* Sign out button */}
                   <button
                     onClick={() => {
                       setIsProfileMenuOpen(false);
