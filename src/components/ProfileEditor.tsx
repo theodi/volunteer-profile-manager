@@ -189,7 +189,7 @@ export default function ProfileEditor() {
     }
 
     discoverStorage();
-  }, [session.webId, solidFetch]);
+  }, [session.webId, solidFetch, setProfileUri, setSaveMessage]);
 
   // Load the volunteer profile resource
   const profileResource = useResource(profileUri);
