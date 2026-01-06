@@ -24,4 +24,29 @@ shape vps:WebIdProfileShape -> foaf:Person {
 	foaf:img IRI [0..1] .
 	foaf:depiction IRI [0..1] .
 	vcard:hasPhoto IRI [0..1] .
+	
+	# Address field
+	vcard:hasAddress @vps:AddressShape [0..1] .
+}
+
+# =============================================================================
+# Address Shape
+# =============================================================================
+
+shape vps:AddressShape -> vcard:Address {
+	vcard:street-address xsd:string [0..1] .
+	vcard:locality xsd:string [0..1] .
+	vcard:region xsd:string [0..1] .
+	vcard:postal-code xsd:string [0..1] .
+	vcard:country-name xsd:string [0..1] .
+	vcard:hasGeo @vps:GeoShape [0..1] .
+}
+
+# =============================================================================
+# Geo Shape for geographic coordinates
+# =============================================================================
+
+shape vps:GeoShape -> vcard:Geo {
+	vcard:latitude xsd:string [0..1] .
+	vcard:longitude xsd:string [0..1] .
 }
