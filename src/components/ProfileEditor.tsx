@@ -530,10 +530,7 @@ export default function ProfileEditor() {
         )}
 
         {/* Loading state */}
-        {profileResource && 
-         profileResource.status.type !== "dataReadSuccess" && 
-         profileResource.status.type !== "containerReadSuccess" && 
-         profileResource.status.type !== "serverError" && (
+        {isProfileLoading && (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading profile...</p>
