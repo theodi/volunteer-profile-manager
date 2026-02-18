@@ -61,8 +61,43 @@ The `start:dev` command concurrently runs the [Community Solid Server](https://c
         - Runs on http://localhost:3001
         - Uses the `./data` directory for storing Solid Resources
         - Has a minimal config using [ACP](https://solidproject.org/TR/acp) for access control
+    - **Automatically seeds test accounts** from `seed-config.json` (if present)
 
 Note: If you want to change the App Admin WebID, update the last line of `.data/.acr` or reset the file and re-run `npm run build` after setting the `NEXT_PUBLIC_ADMIN_WEBID` in `.env`.
+
+### Account Seeding
+
+The application supports automatic account seeding for development and testing. When you start the server, it will automatically create accounts defined in `seed-config.json`.
+
+**Seed Configuration Format:**
+
+Create a `seed-config.json` file in the project root with the following structure:
+
+```json
+[
+  {
+    "email": "user@example.com",
+    "password": "password123",
+    "pods": [
+      { "name": "pod-name" }
+    ]
+  }
+]
+```
+
+**Available Commands:**
+
+- `npm run seed` - Manually seed accounts (requires CSS to be running)
+- `npm run start:css:with-seed` - Start CSS and automatically seed accounts
+- `npm run start:dev` - Starts all services including CSS with automatic seeding
+
+The seeding script will:
+- Wait for CSS server to be ready
+- Check if accounts already exist (skips existing accounts)
+- Create accounts with their associated pods
+- Display a summary of created/skipped/failed accounts
+
+**Note:** The seed configuration file (`seed-config.json`) is not tracked by git by default. You can create your own local version for development.
 
 
 ## Testing

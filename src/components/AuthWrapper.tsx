@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSolidAuth } from "@ldo/solid-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { LoadingState } from "./ui";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -136,25 +137,11 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
   ]);
 
   if (isCheckingSession || isOAuthCallback) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState fullScreen message="Loading..." />;
   }
 
   if (isOAuthCallback && isLoginPage) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState fullScreen message="Loading..." />;
   }
 
   if (!session.isLoggedIn && !isLoginPage) {
@@ -170,16 +157,7 @@ function AuthWrapperContent({ children }: AuthWrapperProps) {
 
 export default function AuthWrapper({ children }: AuthWrapperProps) {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingState fullScreen message="Loading..." />}>
       <AuthWrapperContent>{children}</AuthWrapperContent>
     </Suspense>
   );

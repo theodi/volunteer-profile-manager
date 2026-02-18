@@ -11,6 +11,7 @@ import LocationEditor from "./editor/LocationEditor";
 import TimeEditor from "./editor/TimeEditor";
 import SkillsEditor from "./editor/SkillsEditor";
 import CausesEditor from "./editor/CausesEditor";
+import { LoadingState } from "./ui";
 
 // Available skills from SHACL shapes
 export const SKILLS = [
@@ -534,10 +535,7 @@ export default function ProfileEditor() {
          profileResource.status.type !== "dataReadSuccess" && 
          profileResource.status.type !== "containerReadSuccess" && 
          profileResource.status.type !== "serverError" && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading profile...</p>
-          </div>
+          <LoadingState message="Loading profile..." />
         )}
 
         {/* Tab navigation */}

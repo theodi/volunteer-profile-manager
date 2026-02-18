@@ -2,7 +2,10 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import type { PreferredLocation, Point } from "@/ldo/volunteer.typings";
+import { reverseGeocode, geocode } from "@/services/geocoding";
+import { LoadingState } from "../ui";
 
 // Dynamically import the map component to avoid SSR issues with Leaflet
 const LocationMap = dynamic(() => import("./LocationMap"), {
@@ -30,12 +33,14 @@ interface LocationAddress {
 }
 
 export default function LocationEditor({ locations, onChange, isLoading = false }: LocationEditorProps) {
+  const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [postcodeInput, setPostcodeInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchRadius, setSearchRadius] = useState<number>(10); // Default 10km
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>();
   const [hasInitialized, setHasInitialized] = useState(false);
   const [addresses, setAddresses] = useState<Record<string, LocationAddress>>({});
@@ -225,7 +230,14 @@ export default function LocationEditor({ locations, onChange, isLoading = false 
     [locations, onChange]
   );
 
-  const handleUseCurrentLocation = useCallback(() => {
+  const navigateToOpportunities = useCallback((lat: number, lng: number, radius: number) => {
+    // Convert radius from km to metres for the API
+    const withinMetres = radius * 1000;
+    // Navigate to search page with location params
+    router.push(`/search?lat=${lat}&lon=${lng}&within=${withinMetres}`);
+  }, [router]);
+
+  const handleUseCurrentLocation = useCallback(async () => {
     if (!navigator.geolocation) {
       setGeoError("Geolocation is not supported by your browser");
       return;
@@ -235,10 +247,17 @@ export default function LocationEditor({ locations, onChange, isLoading = false 
     setGeoError(null);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         handleLocationAdd(latitude, longitude);
         setMapCenter({ lat: latitude, lng: longitude });
+        
+        // Reverse geocode to get postcode and fill the input
+        const postcode = await reverseGeocode(latitude, longitude);
+        if (postcode) {
+          setPostcodeInput(postcode);
+        }
+        
         setIsGettingLocation(false);
       },
       (error) => {
@@ -273,41 +292,20 @@ export default function LocationEditor({ locations, onChange, isLoading = false 
     setSearchError(null);
 
     try {
-      // Try UK postcode first (postcodes.io)
-      const ukPostcodeRegex = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
-      
-      if (ukPostcodeRegex.test(postcode)) {
-        const response = await fetch(
-          `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
-        );
-        const data = await response.json();
+      const coordinates = await geocode(postcode);
 
-        if (data.status === 200 && data.result) {
-          const { latitude, longitude } = data.result;
-          handleLocationAdd(latitude, longitude);
-          setMapCenter({ lat: latitude, lng: longitude });
-          setPostcodeInput("");
-          setIsSearching(false);
-          return;
-        }
-      }
-
-      // Fallback to Nominatim for international addresses/postcodes
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(postcode)}&limit=1`,
-        {
-          headers: {
-            "User-Agent": "VolunteerProfileManager/1.0",
-          },
-        }
-      );
-      const data = await response.json();
-
-      if (data.length > 0) {
-        const { lat, lon } = data[0];
-        handleLocationAdd(parseFloat(lat), parseFloat(lon));
-        setMapCenter({ lat: parseFloat(lat), lng: parseFloat(lon) });
+      if (coordinates) {
+        // Add location to the list
+        handleLocationAdd(coordinates.latitude, coordinates.longitude);
+        setMapCenter({ lat: coordinates.latitude, lng: coordinates.longitude });
         setPostcodeInput("");
+        
+        // Navigate to opportunities search page
+        navigateToOpportunities(
+          coordinates.latitude,
+          coordinates.longitude,
+          searchRadius
+        );
       } else {
         setSearchError("Location not found. Try a different postcode or address.");
       }
@@ -317,7 +315,7 @@ export default function LocationEditor({ locations, onChange, isLoading = false 
     } finally {
       setIsSearching(false);
     }
-  }, [postcodeInput, handleLocationAdd]);
+  }, [postcodeInput, handleLocationAdd, navigateToOpportunities, searchRadius]);
 
   const selectedLocation = selectedIndex !== null ? locations[selectedIndex] : null;
 
@@ -332,61 +330,95 @@ export default function LocationEditor({ locations, onChange, isLoading = false 
       </div>
 
       {/* Search and add controls */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Postcode/Address search */}
-        <div className="flex-1">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={postcodeInput}
-              onChange={(e) => setPostcodeInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handlePostcodeSearch()}
-              placeholder="Enter postcode or address..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              disabled={isSearching}
-            />
-            <button
-              onClick={handlePostcodeSearch}
-              disabled={isSearching || !postcodeInput.trim()}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {isSearching ? (
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              )}
-              Search
-            </button>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Postcode/Address search */}
+          <div className="flex-1">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={postcodeInput}
+                onChange={(e) => setPostcodeInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handlePostcodeSearch()}
+                placeholder="Enter postcode or address..."
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={isSearching}
+              />
+              <button
+                onClick={handlePostcodeSearch}
+                disabled={isSearching || !postcodeInput.trim()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                {isSearching ? (
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                )}
+                Search
+              </button>
+            </div>
+            {searchError && (
+              <p className="mt-1 text-sm text-red-600">{searchError}</p>
+            )}
           </div>
-          {searchError && (
-            <p className="mt-1 text-sm text-red-600">{searchError}</p>
-          )}
+
+          {/* Use current location button */}
+          <button
+            onClick={handleUseCurrentLocation}
+            disabled={isGettingLocation}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-gray-700"
+          >
+            {isGettingLocation ? (
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )}
+            Use my location
+          </button>
         </div>
 
-        {/* Use current location button */}
-        <button
-          onClick={handleUseCurrentLocation}
-          disabled={isGettingLocation}
-          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-gray-700"
-        >
-          {isGettingLocation ? (
-            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          )}
-          Use my location
-        </button>
+        {/* Search radius selector */}
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <label htmlFor="search-radius" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            Search radius:
+          </label>
+          <div className="flex items-center gap-3 flex-1">
+            <input
+              type="range"
+              id="search-radius"
+              min="1"
+              max="100"
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+            />
+            <div className="flex items-center gap-2 min-w-[100px]">
+              <input
+                type="number"
+                min="1"
+                max="500"
+                value={searchRadius}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  setSearchRadius(Math.min(Math.max(value, 1), 500));
+                }}
+                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <span className="text-sm text-gray-600">km</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {geoError && (
@@ -547,10 +579,7 @@ export default function LocationEditor({ locations, onChange, isLoading = false 
 
       {/* Loading state */}
       {isGettingLocation && locations.length === 0 && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Detecting your location...</p>
-        </div>
+        <LoadingState message="Detecting your location..." />
       )}
 
       {/* Help text */}

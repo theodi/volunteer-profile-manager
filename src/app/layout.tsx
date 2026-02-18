@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./global.css";
 import LdoProvider from "@/components/providers/LdoProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 /**
  * This is the default metadata of the Next.js application.
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: LayoutProps) {
     return (
         <html lang="en">
             <body suppressHydrationWarning>
-                <LdoProvider>{children}</LdoProvider>
+                <QueryProvider>
+                    <LdoProvider>{children}</LdoProvider>
+                </QueryProvider>
             </body>
         </html>
     );

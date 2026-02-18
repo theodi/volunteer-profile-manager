@@ -3,8 +3,14 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSolidAuth } from "@ldo/solid-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LoadingState } from "./ui";
 
 const PRESET_ISSUERS = [
+  
+  {
+    label: "Local CSS",
+    value: "http://localhost:3001",
+  },
   {
     label: "Solid Community",
     value: "https://solidcommunity.net/",
@@ -38,14 +44,10 @@ function LoginPageContent() {
   // Show loading screen during OAuth callback or when already logged in (waiting for redirect)
   if (isOAuthCallback || session.isLoggedIn) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {session.isLoggedIn ? "Redirecting..." : "Completing sign in..."}
-          </p>
-        </div>
-      </div>
+      <LoadingState
+        fullScreen
+        message={session.isLoggedIn ? "Redirecting..." : "Completing sign in..."}
+      />
     );
   }
 
@@ -245,16 +247,7 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingState fullScreen message="Loading..." />}>
       <LoginPageContent />
     </Suspense>
   );
